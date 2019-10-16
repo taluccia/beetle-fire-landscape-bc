@@ -1,0 +1,100 @@
+---
+title: "Scatter plots of predictor variables"
+author: "Anna Talucci"
+date: "February 7, 2019"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+
+```{r}
+library(devtools)
+library(gbm)
+library(foreign)
+library(dismo)
+library(corrplot)
+library(dplyr)
+```
+
+
+
+```{r}
+model.data = read.csv("../data/GRTS_Samples/2019-03-30_ch3AllSamples_removeoutliers.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+# Check dimensions, column names and order for later operations, and summary statistics
+```{r}
+head(model.data)
+```
+
+```{r}
+model.data = mutate(model.data, beetle_change = ndmihealthy-ndmibeetle) 
+```
+
+
+
+```{r}
+head(model.data)
+```
+
+# Subset Veg predictor varaibles
+```{r}
+plot.data= dplyr::select(model.data, eviprefire, nbrprefire:ndviprefire, beetle_change)
+head(plot.data)
+```
+
+
+# Scatterplot matrix to evaluate covaration among predictors.  Simple graph requires calling variables by name.
+```{r}
+pairs(~eviprefire + nbrprefire + ndmimeanbeetle + ndviprefire + beetle_change, data = plot.data, lower.panel = NULL, cex.labels = 4, cex.axis = 4) #Could include title
+dev.print(pdf, "../output/2019-05-22_scatter_veg.pdf", width = 40, height = 40)
+dev.off()
+```
+
+```{r}
+pairs(~ndmimeanbeetle + ndviprefire + beetle_change, data = plot.data, lower.panel = NULL, cex.labels = 4, cex.axis = 4) #Could include title
+dev.print(pdf, "../output/2019-05-22_scatterbeetle_veg.pdf", width = 40, height = 40)
+dev.off()
+```
+
+
+
+# Correlation matrices thanks to: https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html
+```{r}
+cor <- cor(plot.data)
+corrplot.mixed(cor, lower = "number", upper = "ellipse", number.cex = 1.2, tl.col = "black" , lower.col = "black")
+dev.print(pdf, "../output/2019-05-22_veg_corrplots.pdf", width = 12, height = 12)
+dev.off()
+```
+```{r}
+head(model.data)
+```
+
+```{r}
+plot.data2= dplyr::select(model.data, ndmimeanbeetle, ndviprefire, rdnbr, beetle_change)
+head(plot.data2)
+```
+
+cor(mtcars, use="complete.obs", method="kendall") 
+```{r}
+cor(plot.data2, use="complete.obs", method="pearson")
+```
+
+
+```{r}
+pairs(~ndmimeanbeetle + ndviprefire + beetle_change + rdnbr, data = plot.data2, lower.panel = NULL, cex.labels = 4, cex.axis = 4) #Could include title
+dev.print(pdf, "../output/2019-05-29_scatter_modelvar.pdf", width = 40, height = 40)
+dev.off()
+```
+
+```{r}
+cor <- cor(plot.data2)
+corrplot.mixed(cor, lower = "number", upper = "ellipse", number.cex = 1.2, tl.col = "black" , lower.col = "black")
+dev.print(pdf, "../output/2019-05-29_modelvar_corrplots.pdf", width = 12, height = 12)
+dev.off()
+```
+**THE END**
