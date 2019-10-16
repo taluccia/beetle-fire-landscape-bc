@@ -42,3 +42,4 @@ rsconnect/
 # exclude specific folders from push to github
 figures/*
 files/*
+data/*
