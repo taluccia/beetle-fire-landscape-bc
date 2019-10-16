@@ -1,0 +1,113 @@
+---
+title: 'Project 3: Raw data histograms'
+author: "Anna Talucci"
+date: "September 27, 2019"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+# Clear workspace
+
+```{r}
+rm(list=ls()) 
+```
+
+## Set libraries
+```{r include=FALSE}
+library(devtools)
+library(gbm)
+library(foreign)
+library(dismo)
+library(dplyr)
+library(splines)
+library(ggplot2)
+
+```
+
+
+```{r}
+model.data = read.csv("../data/GRTS_Samples/2019-03-30_ch3AllSamples_removeoutliers.csv", header=TRUE, sep = ",", strip.white = TRUE)
+head(model.data)
+```
+
+## Subset by FWI
+presence/absence (1/0) of high burn severity 
+```{r}
+model.data$fwi_lohi = ifelse(model.data$fwi <= 29, 1, 2)
+model.data$reclass_rdnbr_mt = ifelse(model.data$rdnbr < 316, 0, 1)
+model.data$reclass_rdnbr_fs = ifelse(model.data$rdnbr < 600, 0, 1)
+model.data = mutate(model.data, beetle_change = ndmihealthy-ndmibeetle) 
+```
+2 is anything greater then 29 and 1 is anything less than or equal to 29
+```{r}
+head(model.data)
+```
+
+
+# Histograms of data
+
+
+
+```{r}
+h1 = ggplot(model.data, aes(x=beetle_change)) + geom_histogram(color="black", fill="white") +
+  xlab("dNDMI") +
+  theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) 
+```
+
+```{r}
+h2 = ggplot(model.data, aes(x=ndviprefire)) + geom_histogram(color="black", fill="white") +
+  xlab("NDVI") +
+  theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) 
+```
+
+```{r}
+h3 = ggplot(model.data, aes(x=fwi)) + geom_histogram(color="black", fill="white") +
+  xlab("FWI") +
+  theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) 
+```
+
+```{r}
+h4 = ggplot(model.data, aes(x=elevation)) + geom_histogram(color="black", fill="white") +
+  xlab("Elevation (m)") +
+  theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) 
+```
+
+```{r}
+h5 = ggplot(model.data, aes(x=rdnbr)) + geom_histogram(color="black", fill="white") +
+  xlab("RdNBR") +
+  theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) 
+```
+
+
+
+
+
+
+```{r fig.height=6, fig.width=6}
+( grid2 = cowplot::plot_grid(h1, h2, h4, h3, h5, labels = c("A", "B", "C", "D", "E"), align = "hv", ncol= 2) )
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-05-29_histograms_all.jpeg", plot = grid2, width = 6, height = 6, units = c("in"), dpi=600 )
+```
+
+
+
+```{r fig.height=6, fig.width=6}
+( grid3 = cowplot::plot_grid(h1, h2, h4, h3, h5, labels = c("(a)", "(b)", "(c)", "(d)", "(e)"), label_fontface = 'plain', label_size = 12, align = "hv", ncol= 2) )
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-09-27_histograms_all.jpeg", plot = grid3, width = 6, height = 6, units = c("in"), dpi=600 )
+```
+
+**THE END**
