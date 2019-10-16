@@ -1,0 +1,342 @@
+---
+title: "CBI versus Burn Severity"
+author: "Anna Talucci"
+date: "October 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(statmod)
+library(car)
+library(DHARMa)
+library(GGally)
+library(MASS)
+library(cowplot)
+library(magick)
+library(maptree)
+library(cluster)
+
+library(ggrepel)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+library(party)
+library(cluster)
+```
+
+
+# Data
+
+
+```{r}
+chfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_chzone10.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(chfield)
+```
+
+```{r}
+enfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_enzone10.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(enfield)
+```
+
+```{r}
+twfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_zone9.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(twfield)
+```
+
+```{r}
+chgee = read.csv("../data/gee/2019-04-04_chfieldsites10.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(chgee)
+```
+
+```{r}
+engee = read.csv("../data/gee/2019-04-04_enfieldsites10.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(engee)
+```
+
+```{r}
+twgee = read.csv("../data/gee/2019-04-04_twfieldsites9.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(twgee)
+```
+
+```{r}
+gee = rbind(chgee, engee, twgee)
+gee
+```
+
+```{r}
+gee$fire_sever = factor(gee$fire_sever,levels=c("High","Moderate","Low", "unburned"), ordered=TRUE)
+```
+
+```{r}
+fslegend = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
+  geom_point() +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+    ylab(label="RdNBR") + 
+  xlab("NDVI") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "bottom") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))
+```
+
+```{r}
+( scatplot1 = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
+  geom_point() +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+    ylab(label="RdNBR") + 
+  xlab("NDVI") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "none") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black")) )
+```
+
+
+(x = reorder(Species, Sepal.Width, FUN = median)(x=reorder(fire_sever, rdnbr, FUN = median)
+```{r}
+gee$fire_sever
+```
+
+
+```{r}
+(boxplot1 = ggplot(gee, aes(x=fire_sever, y=rdnbr, fill=fire_sever, order=fire_sever)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("#ff5733", "#ffc300", "#daf7a6", "#1f618d"), name="") +
+   scale_x_discrete(                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned"))+
+    ylab(label="RdNBR") + 
+  xlab("Burn severity class") +
+   guides(fill=guide_legend(ncol=2)) +
+  theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
+   theme(legend.position = "none") +
+
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black")) )
+```
+
+
+
+```{r fig.height=4, fig.width=6}
+legend = cowplot::get_legend(fslegend)
+( fscombo1=cowplot::plot_grid(scatplot1, boxplot1, labels = c("A", "B"), align = "hv", ncol= 2)  ) 
+(fscombo2 = plot_grid(fscombo1, legend, ncol=1, rel_widths = c(1, .1), rel_heights = c(1, .05)) ) 
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-04-08_2016_field.jpeg", plot = fscombo2, width = 6, height = 4, units = c("in"), dpi=600 )
+```
+# Data CBI
+
+```{r}
+field = read.csv("../data/2018-12-10_Entiako_CBI.csv", header = TRUE, sep = ",", strip.white = TRUE)
+head(field)
+
+```
+
+
+```{r}
+(extrac = field %>%
+  dplyr::select(plot:prefiredead, Fire, UTM.E:UTM.N, CBI.under:CBI.total))
+```
+
+
+```{r}
+write.csv(extrac, "../output/2018-12-10_entiakoCBI_subset.csv", quote = TRUE, row.names = FALSE, sep = ",")
+```
+
+# CBI plus dNBR from GEE
+
+## Data
+```{r}
+cbigee = read.csv("../data/2018-12-11_encbi-gee.csv", header = TRUE, sep = ",", strip.white = TRUE)
+head(cbigee)
+
+```
+
+
+
+# RdNBR Miller & Thode only
+```{r warning=FALSE,message=FALSE,echo=FALSE}
+graph11 = ggplot(data = cbigee, aes(x = CBI_total , y = rdnbr)) +
+         geom_point(size = 2) +
+          ylab("RdNBR") +
+          xlab("Total CBI")  +
+    theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
+
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+          theme_bw() 
+```
+Break points from Reilly et al. - red dashed line RdNBR = 235 and RdNBR = 649.
+Break points from Miller and Thode - orange dot dashed line RdNBR =  and RdNBR = 649.
+
+```{r warning=FALSE,message=FALSE,echo=FALSE}
+graph12 = ggplot(data = cbigee, aes(x = CBI_over , y = rdnbr)) +
+         geom_point(size = 2) +
+          ylab("RdNBR") +
+          xlab("Over-story CBI")  +
+    theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+            theme_bw() 
+```
+Break points from Reilly et al. - red dash line is at dNBR = 235 and orange dotdash is as dNBR = 649.
+
+```{r warning=FALSE,message=FALSE,echo=FALSE}
+graph13 = ggplot(data = cbigee, aes(x = CBI_under , y = rdnbr)) +
+         geom_point(size = 2) +
+          ylab("RdNBR") +
+          xlab("Under-story CBI")  +
+    theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+            theme_bw() 
+```
+
+
+```{r fig.height=4.5, fig.width=6}
+( combo1=cowplot::plot_grid(graph11, graph12, graph13, labels = c("A", "B", "C"), align = "hv", ncol= 2)  ) 
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-04-08_CBI_Entiako.jpeg", plot = combo1, width = 6, height = 5, units = c("in"), dpi=600 )
+```
+
+```{r fig.height=4.5, fig.width=6}
+( combo1=cowplot::plot_grid(graph11, graph12, graph13, boxplot1, labels = c("A", "B", "C", "D"), align = "hv", ncol= 2)  ) 
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-05-01_CBIen_allfield.tiff", plot = combo1, width = 6, height = 4.5, units = c("in"), dpi=600 )
+```
+
+```{r fig.height=4.5, fig.width=6}
+( combo2=cowplot::plot_grid(graph11, graph12, graph13, boxplot1, labels = c("(a)", "(b)", "(c)", "(d)"), label_fontface = 'plain', label_size = 12, align = "hv", ncol= 2)  ) 
+```
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-09-27_CBIen_BS_field.tiff", plot = combo2, width = 6, height = 4.5, units = c("in"), dpi=600 )
+```
+# CART
+```{r}
+frmla1 = fire_sever ~ rdnbr + ndviprefire  
+
+fit1 = rpart(frmla1, method="class", data=gee)
+```
+
+```{r}
+tr1 = tree(frmla1, data=gee)
+```
+
+```{r}
+summary(tr1)
+```
+
+```{r}
+plot(tr1); text(tr1, all = T) 
+```
+
+```{r}
+frmla2 = fire_sever ~ dnbr + ndviprefire  
+
+fit2 = rpart(frmla1, method="class", data=gee)
+```
+
+```{r}
+tr2 = tree(frmla2, data=gee)
+```
+
+```{r}
+summary(tr2)
+```
+
+```{r}
+plot(tr2); text(tr2, all = T) 
+```
+
+```{r}
+head(gee)
+```
+
+```{r}
+( gee_sub = gee %>% dplyr::select(dnbr, ndviprefire, rdnbr, fire_sever) )
+
+```
+```{r}
+# K-Means Cluster Analysis
+set.seed(20)
+fit1 <- kmeans(gee_sub[, 1], 4) # 5 cluster solution
+fit1
+```
+
+```{r}
+table(fit1$cluster, gee_sub$fire_sever)
+```
+
+```{r}
+fit1$cluster = as.factor(fit1$cluster)
+ggplot(gee_sub, aes(x=ndviprefire, y=dnbr, color = fit1$cluster, shape=fire_sever)) + 
+  geom_point() +
+  geom_hline(aes(yintercept=500), colour="#990000", linetype="dashed", size=1)  +
+  geom_hline(aes(yintercept=350), colour="darkorange2", linetype="dotdash", size=1) 
+```
+
+
+```{r}
+# K-Means Cluster Analysis
+set.seed(20)
+fit2 <- kmeans(gee_sub[, 3], 4) # 5 cluster solution
+fit2
+```
+
+```{r}
+table(fit2$cluster, gee_sub$fire_sever)
+```
+
+```{r}
+fit2$cluster = as.factor(fit2$cluster)
+ggplot(gee_sub, aes(x=ndviprefire, y=rdnbr, color = fit2$cluster, shape=fire_sever)) + 
+  geom_point() +
+  geom_hline(aes(yintercept=600), colour="#990000", linetype="dashed", size=1)  +
+  geom_hline(aes(yintercept=649), colour="darkorange2", linetype="dotdash", size=1)  
+  
+```
+
+
+
+**THE END**
