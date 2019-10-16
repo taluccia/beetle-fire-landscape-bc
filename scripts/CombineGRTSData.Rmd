@@ -1,0 +1,128 @@
+---
+title: "Combine GRTS Samples from each fire"
+author: "Anna Talucci"
+date: "September 2, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview 
+
+30 March 2019
+Data inspection with histograms and inspection of highly influential outliers
+
+# Clear workspace
+
+```{r}
+rm(list=ls()) 
+```
+
+## Set libraries
+```{r include=FALSE}
+library(devtools)
+library(gbm)
+library(foreign)
+library(dismo)
+library(dplyr)
+library(splines)
+library(ggplot2)
+
+```
+
+## data check & combine
+
+```{r}
+tw = read.csv("../data/GRTS_Samples/2019-09-02_twsampleGRTS.csv", header=TRUE, sep = ",", strip.white = TRUE)
+head(tw)
+```
+
+```{r}
+tw = tw %>%
+  mutate(fire_name = 'tweedsmuir') %>%
+  mutate(fire_code = 'R10252') %>%
+  mutate(fire_year = '2013')
+```
+
+
+```{r}
+( twsum = tw %>%
+  count(burnconditions) %>%
+  group_by(burnconditions) %>%          # now required with changes to dplyr::count()
+  mutate(prop = prop.table(n)) )
+```
+
+```{r}
+en = read.csv("../data/GRTS_Samples/2019-09-02_ensampleGRTS.csv", header=TRUE, sep = ",", strip.white = TRUE)
+head(en)
+```
+
+```{r}
+en = en %>%
+  mutate(fire_name = 'entiako') %>%
+  mutate(fire_code = 'R10171') %>%
+  mutate(fire_year = '2012')
+```
+
+```{r}
+( ensum = en %>%
+  count(burnconditions) %>%
+  group_by(burnconditions) %>%          # now required with changes to dplyr::count()
+  mutate(prop = prop.table(n)) )
+```
+
+```{r}
+ch = read.csv("../data/GRTS_Samples/2019-09-02_chsampleGRTS.csv", header=TRUE, sep = ",", strip.white = TRUE)
+head(ch)
+```
+
+```{r}
+ch = ch %>%
+  mutate(fire_name = 'chelaslie') %>%
+  mutate(fire_code = 'R10070') %>%
+  mutate(fire_year = '2014')
+```
+
+```{r}
+( chsum = ch %>%
+  count(burnconditions) %>%
+  group_by(burnconditions) %>%          # now required with changes to dplyr::count()
+  mutate(prop = prop.table(n)) )
+```
+
+### Combine Fire samples into one dataframe
+Stack data from each fire
+
+```{r}
+names(en)
+```
+
+```{r}
+names(tw)
+```
+```{r}
+names(ch)
+```
+
+
+```{r}
+sample = rbind(en, tw, ch)
+
+```
+
+
+### Remove unnecessary columns from sample
+```{r}
+head(sample)
+```
+
+
+
+
+```{r}
+write.csv(sample, "../output/2019-09-02_AllSamples.csv", row.names=FALSE)
+```
+
+**THE END**
