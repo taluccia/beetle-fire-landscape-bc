@@ -11,14 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Overview
 
-Climate moisture deficit (CMD) as an indicator of anomalously warm and dry fire weather conditions
-Thinking about Climatic anomalies that influence fire weather in sub-boreal
-
+Climate moisture deficit (CMD) as an indicator of anomalously warm and dry fire weather conditions in subboreal systems. This script compiles CMD data from the Climate western North America (WNA) data (Wang et al 2011). We assemble CMD for the years of fire events and the climate normals (1981-2010) data for a visual comparison.
 
 
 # Packages
-
-The following Packages are required for the below analyses:
 
 ```{r, message=FALSE, warning=FALSE}
 library(dplyr)
@@ -58,6 +54,7 @@ head(c2016)
 ```
 
 ## 2015 BC Climate data 
+
 ```{r}
 c2015 = read.csv("../data/climate/2015_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
 head(c2015)
@@ -73,10 +70,8 @@ names(c2015)[6:17] = c( "CMD01.2015", "CMD02.2015", "CMD03.2015", "CMD04.2015", 
 head(c2015)
 ```
 
-
-
-
 ## 2014 BC Climate data 
+
 ```{r}
 c2014 = read.csv("../data/climate/2014_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
 head(c2014)
@@ -92,9 +87,8 @@ names(c2014)[6:17] = c( "CMD01.2014", "CMD02.2014", "CMD03.2014", "CMD04.2014", 
 head(c2014)
 ```
 
-
-
 ## 2013 BC Climate data 
+
 ```{r}
 c2013 = read.csv("../data/climate/2013_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
 head(c2013)
@@ -113,6 +107,7 @@ head(c2013)
 ```
 
 ## 2012 BC Climate data 
+
 ```{r}
 c2012 = read.csv("../data/climate/2012_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
 head (c2012)
@@ -131,6 +126,7 @@ head(c2012)
 ```
 
 ## 2012 BC Climate data 
+
 ```{r}
 c2011 = read.csv("../data/climate/2011_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
 head (c2011)
@@ -149,6 +145,7 @@ head(c2012)
 ```
 
 ## Merge climate data
+
 ```{r}
 climate.1112 = merge(c2011, c2012, by = c("plot", "ID1", "ID2", "Latitude", "Longitude"))
 head(climate.1112)
@@ -174,7 +171,6 @@ cmd_11_16 = merge(climate.11121314, climate.1516, by = c("plot", "ID1", "ID2", "
 head(cmd_11_16)
 ```
 
-
 # Climate Normal Data
 
 ```{r}
@@ -198,8 +194,6 @@ summarise(norm81, min(Elevation))
 summarise(norm81, max(Elevation))
 ```
 
-
-
 ```{r}
 norm81 = norm81 %>% dplyr::select(plot:Longitude, CMD)
 norm61 = norm61 %>% dplyr::select(plot:Longitude, CMD)
@@ -220,13 +214,15 @@ head(climate_normal)
 climate_cmd
 ```
 
-
 ```{r}
 cmd = climate_cmd %>% dplyr::select(sum_cmd2011, sum_cmd2012, sum_cmd2013, sum_cmd2014, sum_cmd2015, sum_cmd2016, cmd.norm61, cmd.norm81)
 head(cmd)
 
 ```
 
+# Visualization
+
+## Create Legend
 
 ```{r}
 
@@ -243,13 +239,14 @@ theme_bw() +
                          labels=c("2011", "2012", "2013", "2014", "2015", "2016", "1961-2000", "1981-2010")) )
 ```
 
-
+## Subset data for 2012, 2013, 2014, 1981-2010
 ```{r}
 cmd_sub = climate_cmd %>% dplyr::select(sum_cmd2012, sum_cmd2013, sum_cmd2014, cmd.norm81)
 head(cmd_sub)
 
 ```
 
+## Create graph
 
 ```{r fig.height=4, fig.width=6}
 
