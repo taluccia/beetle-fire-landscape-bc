@@ -20,8 +20,7 @@ Climate moisture deficit (CMD) as an indicator of anomalously warm and dry fire 
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(MASS)
-library(car)
+library(DT)
 library(RColorBrewer)
 library(cowplot)
 ```
@@ -34,7 +33,7 @@ We will read in the monthly CMD data for each year in order to combine, organize
 
 ```{r}
 c2016 = read.csv("../data/climate/2016_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
-head(c2016)
+datatable(c2016)
 ```
 
 ```{r}
@@ -167,8 +166,8 @@ mean_annual
 
 # Visualization
 
-## Create Legend
-```{r}
+
+```{r, echo=FALSE}
 ( climatecmd = ggplot(annual_cmd, aes(x = year, y = CMD, fill = year)) +
   geom_boxplot() +
   ylab("Climate moisture deficit (mm)") +
