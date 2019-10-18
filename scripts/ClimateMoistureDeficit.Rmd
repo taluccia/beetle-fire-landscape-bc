@@ -22,15 +22,12 @@ library(tidyr)
 library(ggplot2)
 library(MASS)
 library(car)
-library(GGally)
-library(lme4)
-library(DHARMa)
-library(lsmeans)
-library(gmodels)
-library(REdaS)
+
+
+
 library(RColorBrewer)
 library(cowplot)
-library(forcats)
+
 ```
 
 # Data extract and organize
@@ -305,10 +302,6 @@ ggplot(cmd4, aes(x = reorder(cmd_period, mm, FUN=median), y = mm, fill = cmd_per
 ggsave("../figs/2019-04-26_climateCMD_ordered.tiff", plot = climatecmd2, width = 6, height = 4, units = c("in"), dpi=600 )
 ```
 
-```{r fig.height=6, fig.width=6}
-legend = cowplot::get_legend(legend)
 
-( climatenorm = cowplot::plot_grid(frostgraph, pasgraph, cmdgraph, legend, labels = c("A", "B", "C"), align = "hv", ncol= 2) )
-```
 
 
