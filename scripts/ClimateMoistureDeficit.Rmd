@@ -22,15 +22,14 @@ library(tidyr)
 library(ggplot2)
 library(MASS)
 library(car)
-
-
-
 library(RColorBrewer)
 library(cowplot)
-
 ```
 
 # Data extract and organize
+
+We will read in the monthly CMD data for each year in order to combine, organize and extract annual values.
+
 ## 2016 BC Climate data 
 
 ```{r}
@@ -39,16 +38,14 @@ head(c2016)
 ```
 
 ```{r}
-(c2016 = c2016 %>%
-   mutate(year = "2016") %>% dplyr::select(plot:Longitude, CMD01:CMD12, year) %>%
-  mutate(sum_cmd2016 = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12))
-```
-
-```{r}
-names(c2016)[6:17] = c("CMD01.2016", "CMD02.2016", "CMD03.2016", "CMD04.2016", "CMD05.2016", "CMD06.2016", "CMD07.2016", "CMD08.2016", "CMD09.2016", "CMD10.2016", "CMD11.2016", "CMD12.2016")
-
+c2016 = c2016 %>%
+    mutate(year = "2016") %>% 
+    mutate(CMD = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12) %>%
+    dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
 head(c2016)
 ```
+
+
 
 ## 2015 BC Climate data 
 
@@ -59,10 +56,9 @@ head(c2015)
 
 ```{r}
 c2015 = c2015 %>%
-   mutate(year = "2015") %>% dplyr::select(plot:Longitude, CMD01:CMD12, year) %>%
-    mutate(sum_cmd2015 = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12)
-
-names(c2015)[6:17] = c( "CMD01.2015", "CMD02.2015", "CMD03.2015", "CMD04.2015", "CMD05.2015", "CMD06.2015", "CMD07.2015", "CMD08.2015", "CMD09.2015", "CMD10.2015", "CMD11.2015", "CMD12.2015")
+    mutate(year = "2015") %>% 
+    mutate(CMD = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12) %>%
+    dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
 
 head(c2015)
 ```
@@ -76,10 +72,9 @@ head(c2014)
 
 ```{r}
 c2014 = c2014 %>%
-   mutate(year = "2014") %>% dplyr::select(plot:Longitude, CMD01:CMD12, year) %>%
-    mutate(sum_cmd2014 = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12)
-
-names(c2014)[6:17] = c( "CMD01.2014", "CMD02.2014", "CMD03.2014", "CMD04.2014", "CMD05.2014", "CMD06.2014", "CMD07.2014", "CMD08.2014", "CMD09.2014", "CMD10.2014", "CMD11.2014", "CMD12.2014")
+    mutate(year = "2014") %>% 
+    mutate(CMD = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12) %>%
+    dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
 
 head(c2014)
 ```
@@ -92,14 +87,11 @@ head(c2013)
 ```
 
 ```{r}
-(c2013 = c2013 %>%
-   mutate(year = "2013") %>% dplyr::select(plot:Longitude, CMD01:CMD12, year) %>%
-    mutate(sum_cmd2013 = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12))
-```
-
-```{r}
-names(c2013)[6:17] = c( "CMD01.2013", "CMD02.2013", "CMD03.2013", "CMD04.2013", "CMD05.2013", "CMD06.2013", "CMD07.2013", "CMD08.2013", "CMD09.2013", "CMD10.2013", "CMD11.2013", "CMD12.2013")
-
+c2013 = c2013 %>%
+    mutate(year = "2013") %>% 
+    mutate(CMD = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12) %>%
+    dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
+  
 head(c2013)
 ```
 
@@ -107,65 +99,31 @@ head(c2013)
 
 ```{r}
 c2012 = read.csv("../data/climate/2012_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
-head (c2012)
 ```
 
 ```{r}
-(c2012 = c2012 %>%
-   mutate(year = "2012") %>% dplyr::select(plot:Longitude, CMD01:CMD12, year) %>%
-    mutate(sum_cmd2012 = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12))
-```
-
-```{r}
-names(c2012)[6:17] = c( "CMD01.2012", "CMD02.2012", "CMD03.2012", "CMD04.2012", "CMD05.2012", "CMD06.2012", "CMD07.2012", "CMD08.2012", "CMD09.2012", "CMD10.2012", "CMD11.2012", "CMD12.2012")
+c2012 = c2012 %>%
+    mutate(year = "2012") %>% 
+    mutate(CMD = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12) %>%
+    dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
 
 head(c2012)
 ```
 
-## 2012 BC Climate data 
+## 2011 BC Climate data 
 
 ```{r}
 c2011 = read.csv("../data/climate/2011_climate.csv", header=TRUE, sep = ",", strip.white = TRUE)
-head (c2011)
+head(c2011)
 ```
 
 ```{r}
-(c2011 = c2011 %>%
-   mutate(year = "2011") %>% dplyr::select(plot:Longitude, CMD01:CMD12, year) %>%
-   mutate(sum_cmd2011 = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12))
-```
+c2011 = c2011 %>%
+   mutate(year = "2011") %>% 
+   mutate(CMD = CMD01+CMD02+CMD03+CMD04+CMD05+CMD06+CMD07+CMD08+CMD09+CMD10+CMD11+CMD12) %>%
+  dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
 
-```{r}
-names(c2011)[6:17] = c( "CMD01.2011", "CMD02.2011", "CMD03.2011", "CMD04.2011", "CMD05.2011", "CMD06.2011", "CMD07.2011", "CMD08.2011", "CMD09.2011", "CMD10.2011", "CMD11.2011", "CMD12.2011")
-
-head(c2012)
-```
-
-## Merge climate data
-
-```{r}
-climate.1112 = merge(c2011, c2012, by = c("plot", "ID1", "ID2", "Latitude", "Longitude"))
-head(climate.1112)
-```
-
-```{r}
-climate.1314 = merge(c2013, c2014, by = c("plot", "ID1", "ID2", "Latitude", "Longitude"))
-head(climate.1314)
-```
-
-```{r}
-climate.1516 = merge(c2015, c2016, by = c("plot", "ID1", "ID2", "Latitude", "Longitude"))
-head(climate.1516)
-```
-
-```{r}
-climate.11121314 = merge(climate.1112, climate.1314, by = c("plot", "ID1", "ID2", "Latitude", "Longitude"))
-head(climate.11121314)
-```
-
-```{r}
-cmd_11_16 = merge(climate.11121314, climate.1516, by = c("plot", "ID1", "ID2", "Latitude", "Longitude"))
-head(cmd_11_16)
+head(c2011)
 ```
 
 # Climate Normal Data
@@ -182,125 +140,48 @@ head(norm81)
 ```
 
 ```{r}
-summarise(norm81, mean(MAT, na.rm = T))
-summarise(norm81, mean(MAP))
-summarise(norm81, mean(MSP))
-summarise(norm81, mean(MWMT))
-summarise(norm81, mean(MCMT))
-summarise(norm81, min(Elevation))
-summarise(norm81, max(Elevation))
+norm81 = norm81 %>%
+   mutate(year = "1981-2010") %>% 
+   dplyr::select(plot, Latitude, Longitude, Elevation, year, CMD)
+
+head(norm81)
+```
+
+
+## Combine multi-year climate data 
+
+```{r}
+annual_cmd = rbind(c2012, c2013, c2014, norm81)
+summary(annual_cmd)
 ```
 
 ```{r}
-norm81 = norm81 %>% dplyr::select(plot:Longitude, CMD)
-norm61 = norm61 %>% dplyr::select(plot:Longitude, CMD)
+mean_annual = annual_cmd %>%
+  group_by(year) %>%
+  summarise(mean_cmd = mean(CMD))
+mean_annual
+#datatable(mean_annual)
 ```
 
-```{r}
-( climate_normal = merge(norm61, norm81, by = c("plot", "ID1", "ID2", "Latitude", "Longitude")) )
-climate_normal
-```
 
-```{r}
-names(climate_normal)[6:7] = c("cmd.norm61", "cmd.norm81")
-head(climate_normal)
-```
-
-```{r}
-( climate_cmd = merge(climate_normal, cmd_11_16, by = c("plot", "ID1", "ID2", "Latitude", "Longitude")) )
-climate_cmd
-```
-
-```{r}
-cmd = climate_cmd %>% dplyr::select(sum_cmd2011, sum_cmd2012, sum_cmd2013, sum_cmd2014, sum_cmd2015, sum_cmd2016, cmd.norm61, cmd.norm81)
-head(cmd)
-
-```
 
 # Visualization
 
 ## Create Legend
-
 ```{r}
-
-( legend = ggplot(stack(cmd), aes(x = ind, y = values, fill = ind)) +
+( climatecmd = ggplot(annual_cmd, aes(x = year, y = CMD, fill = year)) +
   geom_boxplot() +
-  scale_fill_brewer(palette = "Accent", name = "Year", breaks=c("sum_cmd2011", "sum_cmd2012", "sum_cmd2013", "sum_cmd2014", "sum_cmd2015", "sum_cmd2016", "cmd.norm61", "cmd.norm81"),
-                         labels=c("2011", "2012", "2013", "2014", "2015", "2016", "1961-2000", "1981-2010")) +
-theme_bw() +
-
-  
-      ylab("Climate moisture deficit (mm)") +
-    xlab("") +
-  scale_x_discrete(breaks=c("sum_cmd2011", "sum_cmd2012", "sum_cmd2013", "sum_cmd2014", "sum_cmd2015", "sum_cmd2016", "cmd.norm61", "cmd.norm81"),
-                         labels=c("2011", "2012", "2013", "2014", "2015", "2016", "1961-2000", "1981-2010")) )
-```
-
-## Subset data for 2012, 2013, 2014, 1981-2010
-```{r}
-cmd_sub = climate_cmd %>% dplyr::select(sum_cmd2012, sum_cmd2013, sum_cmd2014, cmd.norm81)
-head(cmd_sub)
-
-```
-
-## Create graph
-
-```{r fig.height=4, fig.width=6}
-
-(climatecmd = ggplot(stack(cmd_sub), aes(x = ind, y = values, fill = ind)) +
-  geom_boxplot() +
-  scale_fill_brewer(palette = "Accent", name = "Year", 
-                    breaks=c("sum_cmd2012", "sum_cmd2013", "sum_cmd2014", "cmd.norm81"),
-                         labels=c("2012", "2013", "2014", "1981-2010")) +
-  theme_bw() +
   ylab("Climate moisture deficit (mm)") +
   xlab("") +
-  scale_x_discrete(breaks=c("sum_cmd2012", "sum_cmd2013", "sum_cmd2014", "cmd.norm81"),
-                         labels=c("2012", "2013", "2014", "1981-2010")) )
+  scale_fill_brewer(palette = "Accent") +
+  theme_bw() +
+    theme(legend.position = "none") )
 ```
 
 ```{r eval=FALSE, include=FALSE}
-ggsave("../figs/2019-04-26_climateCMD.tiff", plot = climatecmd, width = 6, height = 4, units = c("in"), dpi=600 )
+ggsave("../figs/2019-10-17_climateCMD.tiff", plot = climatecmd, width = 6, height = 4, units = c("in"), dpi=600 )
 ```
 
-
-```{r}
-cmd_sub2 = climate_cmd %>% dplyr::select(sum_cmd2012, sum_cmd2013, sum_cmd2014, cmd.norm81)
-head(cmd_sub)
-
-```
-
-
-```{r}
-cmd3 = cmd_sub2 %>% dplyr::select(sum_cmd2012, sum_cmd2013, sum_cmd2014, cmd.norm81)
-head(cmd3)
-cmd4=cmd3 %>% gather(key = cmd_period, value=mm)
-head(cmd4)
-```
- pasgraph = ggplot(pas2, aes(x = reorder(snow_period, mm, FUN=median), y = mm, fill = snow_period))
-```{r}
-cmd4$cmd_period=factor(cmd4$cmd_period , levels=levels(cmd4$cmd_period)[c("cmd.norm81","sum_cmd2012","sum_cmd2013","sum_cmd2014")])
-```
-
-ggplot(cmd4, aes(x = reorder(cmd_period, mm, FUN=median), y = mm, fill = cmd_period))
-```{r fig.height=4, fig.width=6}
-
-(climatecmd2 = ggplot(cmd4, aes(x = cmd_period, y = mm, fill = cmd_period)) +
-  geom_boxplot() +
-  scale_fill_brewer(palette = "Accent", name = "Year", 
-                    breaks=c("sum_cmd2012", "sum_cmd2013", "sum_cmd2014", "cmd.norm81"),
-                         labels=c("2012", "2013", "2014", "1981-2010")) +
-  theme_bw() +
-      theme(legend.position = "none") +
-  ylab("Climate moisture deficit (mm)") +
-  xlab("") +
-  scale_x_discrete(breaks=c( "cmd.norm81", "sum_cmd2012", "sum_cmd2013", "sum_cmd2014"),
-                         labels=c("1981-2010", "2012", "2013", "2014")) )
-```
-
-```{r eval=FALSE, include=FALSE}
-ggsave("../figs/2019-04-26_climateCMD_ordered.tiff", plot = climatecmd2, width = 6, height = 4, units = c("in"), dpi=600 )
-```
 
 
 
