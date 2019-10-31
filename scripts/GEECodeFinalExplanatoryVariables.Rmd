@@ -1,0 +1,1056 @@
+---
+title: "GEE Code Final Explanatory Variables Landscape Assessment BC"
+author: "Anna Talucci"
+date: "10/31/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+GEE code for each fire for all final explanatory variables for analysis, which is based off of all potential explanatory variables. 
+
+Code needs to be run in Google Earth Engine interface code.earthengine.google.com
+
+Link to code hosted in earth engine preceeds each chunck of code.
+
+# Entiako Code
+
+https://code.earthengine.google.com/84535edb7d69fc7bea4c745fa88574c5
+
+```{js}
+// Enitako Fire - Script to develop beetle outbreak severity and burn severity from Landsat data as well as 
+//        topographic variables from the Canadian DEM for the Entiako fire (R10171) 
+//        that burned in 2012 in British Columbia, Canada. Spatial data development is then exported and 
+//        used in a boosted regression tree (BRT) analysis to evaluate drivers of burn severity
+//  Script by Anna Talucci - Oregon State University
+//  For updates or questions on the code please contact:
+//      Anna Talucci, actalucci@gmail.com
+//
+// Metrics created include:
+//    NBR:      normalized burn ratio, uses NIR band and SWIR2, for pre- and post-fire
+//    RdNBR:    relativized delta normalized burn ratio as a measure of burn severity
+//    NDMI:     normalized differenced moisture index for pre- and post-outbreak
+//    dNDMI:    delta normalized differenced moisture index as a measure of outbreak severity
+//    NDVI:     normalized differenced vegetation index as a measure of prefire vegetation conditions
+//    
+// Code for Entiako Fire (R10171) that burned in August 2012 
+//    Located in Entiako Provincial Park, British Columbia, Canada
+
+
+
+//-------------------------      Inputs     --------------------------------------------//
+Map.setCenter(-125.5404, 53.1898, 12); 
+
+// Burning conditions 
+var enbc = ee.Image("users/actalucci/2019-01-07_entiako_burncon");
+var enbc = enbc.rename('burnconditions');
+
+var endob = ee.Image("users/actalucci/2012_R10171_dob");
+var endob = endob.rename('dob');
+
+var enfwi = ee.Image("users/actalucci/2012_R10171_fwi");
+var enfwi = enfwi.rename('fwi');
+
+// Fire Perimeter
+var enforest = ee.FeatureCollection('users/actalucci/R10171_nowater');//Forest only, water removed 
+Map.addLayer(enforest, {}, 'enforest');
+
+// Landsat 5, 7, and 8 Surface Reflectance Tier 1 collections
+var landsat8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR'),
+    landsat7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR'),
+    landsat5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR');
+    
+// Canadian DEM
+var NRCanDEM = ee.ImageCollection('NRCan/CDEM');
+
+// GRTS Sample points
+var chsample = ee.FeatureCollection('users/actalucci/chsample');
+var twsample = ee.FeatureCollection('users/actalucci/twsample3');
+var ensample = ee.FeatureCollection('users/actalucci/ensample');
+var pts = ee.FeatureCollection(twsample.merge(ensample.merge(chsample)));
+
+// Map.addLayer(ensample, {}, 'ensample')
+
+// geometry box for subsetting DEM data
+var area = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-127.1118380703125, 53.638837562258864],
+          [-127.07275051939462, 52.90445418177282],
+          [-124.29320950376962, 52.944194099843344],
+          [-124.55413479673837, 53.831970256964254]]]);
+
+
+
+//-----------------------Calibration Harmonization (Data Prep)--------------------------//
+
+// Add calibration table 
+var xcal_table = ee.FeatureCollection('users/actalucci/Roy_xcal'); //define variable for calibration table Following Roy et al
+
+// Gather Images and define band names 
+// Define bands and rename
+var l7_bands = ['B1','B2','B3','B4','B5','B7','pixel_qa']; // define landsat 7 bands, these also match landsat 5 bands
+var l8_bands = ['B2','B3','B4','B5','B6','B7','pixel_qa']; // define landsat 8 bands
+var rename_bands = ['blue','green','red','nir','swir1','swir2','pixel_qa']; //define how we will rename bands so that we can have the same bands across all landsat data - 5, 7, and 8
+var XCAL_BANDS = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2']); //define variable to use in the cross calibration that is a list of the band names
+
+// Rename bands
+var l5 = landsat5.select(l7_bands,rename_bands); // this renames the bands
+var l7 = landsat7.select(l7_bands,rename_bands); // this renames the bands
+var l8 = landsat8.select(l8_bands,rename_bands); // this renames the bands
+
+// Gather image collection (surface reflectance) 
+// and filter by date range, geographic point location, and cloud coverage (less than 10)
+var l5_ic = l5.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+
+var l7_ic = l7.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+                    
+var l8_ic = l8.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+
+// Calibrate L8 to L7
+var l8_ic_xcal = l8_ic.map(function(img){  //define a function that will be mapped to l8_ic on an image by image basis
+  var xcal_bands = XCAL_BANDS.map(function(band_name){ //the apply a function that will map the XCAL_BANDS that we defined above 
+    var band = img.select([band_name]); //the variable band will selected the band name from the image
+    var bandCoeff = ee.Feature(xcal_table.filterMetadata('band','equals',band_name).first()); //this variable will use the xcal_table and filter using the metadata for band equals band name and then take the first
+    var bandOffset = ee.Number(bandCoeff.get('offset')); //this variable will take the bandCoeff defined above and get the offset
+    var bandSlope = ee.Number(bandCoeff.get('slope')); //this variable will take the bandCoeff defined above and get the slope
+    var band_xcal = band.multiply(bandSlope).add(bandOffset); // define a variable that takes the band multiplies it by the bandSlope and adds the bandOffset
+    return band_xcal}); //finally the function returns a band that is cross calibrated
+  
+  var xcal_img = ee.Image([xcal_bands.get(0),xcal_bands.get(1),xcal_bands.get(2),
+                            xcal_bands.get(3),xcal_bands.get(4),xcal_bands.get(5)]).toInt16(); // define a variable that will take an image and acquire the xcal_bands associated with 0, 1, 2, 3, 4, 5 and cast the value as a 16-bit integer 
+  xcal_img = xcal_img.addBands(img.select('pixel_qa'),['pixel_qa']); //stays unsigned int8; now add the pixel_qa band to the image we defined above
+
+  xcal_img = ee.Image(xcal_img.copyProperties(img)); //still omits system properties; copy properties to image
+  xcal_img = ee.Image(xcal_img.set( //set the metedata properties for the image defined below
+                      'system:id',img.get('system:id'), //get the system:id associated with the image
+                      'system:footprint',img.get('system:footprint'), //get the system:footprint associated with the image
+                      'system:index',img.get('system:index'), //get the system:index associated with the image
+                      'system:time_end',img.get('system:time_end'), //get the system:time_end associated with the image
+                      'system:time_start',img.get('system:time_start'), //get the system:time_start associated with the image
+                      'xcal','true'));
+  return xcal_img.rename(['blue','green','red','nir','swir1','swir2','pixel_qa']);//finally return the xcal_image with the bands renamed
+});
+
+var xcal_landsat = ee.ImageCollection(l5_ic.merge(l7_ic).merge(l8_ic_xcal));// now combine landsat 5, 7, and 8
+xcal_landsat = xcal_landsat.sort('system:time_end'); // then sort the xcal_landsat by system:time_end
+
+// Filter calibrated collection of Landsat for growing season months
+var landsat_xcal_all = xcal_landsat.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(5,9,'month'))
+    .filter(ee.Filter.calendarRange(1990,2017,'year')) 
+    .sort('system:index'); 
+
+// Function to calculate and add NBR, NDMI, EVI, NDVI band 
+function addNBR(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var nbr = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - SWIR2) / (NIR + SWIR2)*1000', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'SWIR2': image.select('swir2')}); //select the nir band to be used in the expression
+  var img_nbr = image.addBands(nbr); // nowadd the nbr band to the image 
+  return img_nbr; //finally it returns the variable we created in the line above
+}// end of the function
+
+ 
+function addNDMI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var ndmi = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - SWIR1) / (NIR + SWIR1)*1000', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'SWIR1': image.select('swir1')}); //select the nir band to be used in the expression
+  var img_ndmi = image.addBands(ndmi); // nowadd the nbr band to the image 
+  return img_ndmi; //finally it returns the variable we created in the line above
+}// end of the function
+
+ 
+function addEVI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var evi = image.expression( //create variable evi that is a mathematical expression
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
+      'NIR': image.select('nir'),
+      'RED': image.select('red'),
+      'BLUE': image.select('blue')
+}); //select the nir band to be used in the expression
+  var img_evi = image.addBands(evi); // nowadd the evi band to the image 
+  return img_evi; //finally it returns the variable we created in the line above
+}// end of the function
+
+function addNDVI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var ndvi = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - RED) / (NIR + RED)', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'RED': image.select('red')}); //select the nir band to be used in the expression
+  var img_ndvi = image.addBands(ndvi); // nowadd the nbr band to the image 
+  return img_ndvi; //finally it returns the variable we created in the line above
+}// end of the function
+
+
+// Cloud Mask for pixel_qa
+var getQABits = function(image, start, end, newName) {  // Compute the bits we need to extract.
+    var pattern = 0;
+    for (var i = start; i <= end; i++) {
+       pattern += Math.pow(2, i);
+    }
+    // Return a single band image of the extracted QA bits, giving the band
+    // a new name.
+    return image.select([0], [newName])
+                  .bitwiseAnd(pattern)
+                  .rightShift(start);
+};
+
+// A function to mask out cloudy pixels.
+var cloud_shadows = function(image) {
+  // Select the QA band.
+  var QA = image.select(['pixel_qa']);
+  // Get the internal_cloud_algorithm_flag bit.
+  return getQABits(QA, 3,3, 'Cloud_shadows').eq(0);
+  // Return an image masking out cloudy areas.
+};
+
+// A function to mask out cloudy pixels.
+var clouds = function(image) {
+  // Select the QA band.
+  var QA = image.select(['pixel_qa']);
+  // Get the internal_cloud_algorithm_flag bit.
+  return getQABits(QA, 5,5, 'Cloud').eq(0);
+  // Return an image masking out cloudy areas.
+};
+
+var maskClouds = function(image) {
+  var cs = cloud_shadows(image);
+  var c = clouds(image);
+  image = image.updateMask(cs);
+  return image.updateMask(c);
+};
+
+// Map Indices and cloud mask to image collection then rename bands to index names
+var landsat_full = landsat_xcal_all.map(addNBR).map(addNDMI).map(addEVI).map(addNDVI).map(maskClouds);
+var landsat_full_bands = ['blue','green','red','nir','swir1','swir2','pixel_qa','nir_1','nir_2','constant','nir_3'];
+var rename_bands2 = ['blue','green','red','nir','swir1','swir2','pixel_qa','nbr','ndmi','evi','ndvi'];
+var landsatfull = landsat_full.select(landsat_full_bands,rename_bands2); 
+
+//------------------     Outbreak Severity      ----------------------------------//
+// Pre-beetle outbreak
+var prebeetle = ee.Image(landsatfull.filterBounds(ensample) 
+    .filter(ee.Filter.calendarRange(6,9,'month'))
+    .filter(ee.Filter.calendarRange(1995,1998,'year')) 
+    .sort('CLOUD_COVER') 
+    .first());   
+
+Map.addLayer(prebeetle, {}, 'prebeetle')
+
+var prebeetle_ndmi = prebeetle.select('ndmi').rename('ndmiprebeetle');
+var withprebeetle_ndmi = prebeetle_ndmi.int();
+var prebeetle_ndvi = prebeetle.select('ndvi').rename('ndviprebeetle');
+
+// Post-beetle outbreak
+var beetle = ee.Image(landsatfull.filterBounds(ensample) 
+    .filter(ee.Filter.calendarRange(6,9,'month'))
+    .filter(ee.Filter.calendarRange(2006,2006,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50)
+    .sort('CLOUD_COVER') 
+    .first()); 
+
+var postbeetle = beetle.select('ndmi').rename('ndmibeetle');
+var withbeetle_ndmi = postbeetle.int();
+
+var dndmi = prebeetle.subtract(postbeetle).select('ndmi')
+var withdndmi = dndmi.int().rename('dndmi')
+
+//-------------------     Burn severity (RdNBR)      -----------------------------//
+
+// Prefire NBR
+var prefire = ee.Image(landsatfull.filterBounds(ensample) 
+    .filter(ee.Filter.calendarRange(7,8,'month'))
+    .filter(ee.Filter.calendarRange(2012,2012,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50) 
+    .sort('CLOUD_COVER') 
+    .first());  
+
+var prefire_ndvi = prefire.select('ndvi').rename('ndviprefire');
+
+// Postfire NBR
+var postfire = ee.Image(landsatfull.filterBounds(ensample) 
+    .filter(ee.Filter.calendarRange(5,9,'month'))
+    .filter(ee.Filter.calendarRange(2013,2013,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50) 
+    .first()); //return the first image 
+
+var postfire_nbr = postfire.select('nbr');
+var withpostfire_nbr = postfire_nbr.int().rename('post_nbr');
+
+// Caluculate dNBR & RdNBR (BURN SEVERITY)
+var dnbr = prefire.subtract(postfire).select('nbr');
+var withdnbr = dnbr.int().rename('dnbr');
+var rdnbr_bottom = prefire.divide(1000).abs().sqrt();
+var rdnbr = dnbr.divide(rdnbr_bottom).select('nbr');
+var withrdnbr = rdnbr.int().rename('rdnbr');
+
+//----------------------     Topographic variables      ---------------------------------//
+
+var study = ee.ImageCollection(NRCanDEM.filterBounds(area)); 
+    
+// Get the projection from the first of these images
+var proj = study.first().projection();
+
+// Create the mosaic and clip down to study area
+var mosaic = study.mosaic().clip(area);
+
+// Create the derived terrain layers
+var terrain = ee.Terrain.products(mosaic.reproject(proj));
+
+// Create topography variables based on 
+var elevation = mosaic.select('elevation');
+
+var slppct = terrain.select(['slope'], ['SLPPCT']);
+var aspect = terrain.select('aspect');
+var asptr = aspect.multiply(-1.0).add(45.0)
+  .divide(180.0).multiply(Math.PI).cos().add(1.0)
+  .rename('ASPTR');
+var tpi450 = elevation.subtract(elevation.focal_mean(15))
+  .rename('TPI450');
+var latlon = ee.Image.pixelLonLat();
+var lon = latlon.select(['longitude'], ['LON']);
+var lat = latlon.select(['latitude'], ['LAT']);
+
+var all_topo = elevation
+  .addBands(slppct)
+  .addBands(asptr)
+  .addBands(tpi450)
+  .addBands(lat)
+  .addBands(lon);
+  
+// Stack data and extract to table
+var all = elevation
+  .addBands(slppct)
+  .addBands(asptr)
+  .addBands(tpi450)
+  .addBands(lat)
+  .addBands(lon)
+  .addBands(withdnbr)
+  .addBands(withrdnbr)
+  .addBands(withdndmi)
+  .addBands(prefire_ndvi);
+
+// clip all and add burning conditions 
+var clip_all = all.clip(enforest);
+var all_bc = clip_all.addBands(enbc).addBands(endob).addBands(enfwi); 
+
+// Extract data from pixels
+var input_img = all_bc;
+var grts_ensample = ensample;
+var scale_value = 30;
+
+var data_extract = input_img.sampleRegions({ 
+  collection: grts_ensample, 
+  scale: scale_value 
+});
+
+// Export data to csv file in google drive
+var date = '2019-09-02'; 
+Export.table.toDrive({
+  collection:data_extract,
+  description:date+'_ensampleGRTS',
+  fileFormat:'CSV'});
+
+//++++++++++++++++++++++++++++++++++++++THE END ++++++++++++++++++++++++++++++++++//
+
+```
+
+# Tweedsmuir Code
+
+https://code.earthengine.google.com/913dec54a21e771426690c39d8b6803f
+
+```{js}
+// Tweedsmuir Fire - Script to develop beetle outbreak severity and burn severity from Landsat data as well as 
+//        topographic variables from the Canadian DEM for the Tweedsmuir fire (R10252) 
+//        that burned in 2013 in British Columbia, Canada. Spatial data development is then exported and 
+//        used in a boosted regression tree (BRT) analysis to evaluate drivers of burn severity
+//  Script by Anna Talucci - Oregon State University
+//  For updates or questions on the code please contact:
+//      Anna Talucci, actalucci@gmail.com
+//
+// Metrics created include:
+//    NBR:      normalized burn ratio, uses NIR band and SWIR2, for pre- and post-fire
+//    RdNBR:    relativized delta normalized burn ratio as a measure of burn severity
+//    NDMI:     normalized differenced moisture index for pre- and post-outbreak
+//    dNDMI:    delta normalized differenced moisture index as a measure of outbreak severity
+//    NDVI:     normalized differenced vegetation index as a measure of prefire vegetation conditions
+//    
+// Code for Tweedsmuir Fire (R10252) that burned in Spetember 2013 
+//    Located in Tweedsmuir Provincial Park, British Columbia, Canada
+
+
+
+//-------------------------      Inputs     --------------------------------------------//
+Map.setCenter(-126.1286, 53.2856, 12); 
+
+// Burning conditions 
+var twbc = ee.Image("users/actalucci/2019-01-07_tweeds_burncon");
+var twbc = twbc.rename('burnconditions');
+
+var twdob = ee.Image("users/actalucci/2013_R10252_dob");
+var twdob = twdob.rename('dob');
+
+var twfwi = ee.Image("users/actalucci/2013_R10252_fwi");
+var twfwi = twfwi.rename('fwi');
+
+// Fire Perimeter
+var twforest = ee.FeatureCollection('users/actalucci/tw_R10252_2013_Forestonly');
+Map.addLayer(twforest, {}, 'twforest');
+
+// Landsat 5, 7, and 8 Surface Reflectance Tier 1 collections
+var landsat8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR'),
+    landsat7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR'),
+    landsat5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR');
+    
+// Canadian DEM
+var NRCanDEM = ee.ImageCollection('NRCan/CDEM');
+
+// GRTS Sample points
+var twsample = ee.FeatureCollection('users/actalucci/twsample3');
+var pts = twsample;
+
+// geometry box for subsetting DEM data
+var area = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-127.1118380703125, 53.638837562258864],
+          [-127.07275051939462, 52.90445418177282],
+          [-124.29320950376962, 52.944194099843344],
+          [-124.55413479673837, 53.831970256964254]]]);
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//-----------------------Calibration Harmonization (Data Prep)--------------------------//
+//////////////////////////////////////////////////////////////////////////////////////////
+
+// Add calibration table 
+var xcal_table = ee.FeatureCollection('users/actalucci/Roy_xcal'); //define variable for calibration table Following Roy et al
+
+// Gather Images and define band names 
+// Define bands and rename
+var l7_bands = ['B1','B2','B3','B4','B5','B7','pixel_qa']; // define landsat 7 bands, these also match landsat 5 bands
+var l8_bands = ['B2','B3','B4','B5','B6','B7','pixel_qa']; // define landsat 8 bands
+var rename_bands = ['blue','green','red','nir','swir1','swir2','pixel_qa']; //define how we will rename bands so that we can have the same bands across all landsat data - 5, 7, and 8
+var XCAL_BANDS = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2']); //define variable to use in the cross calibration that is a list of the band names
+
+// Rename bands
+var l5 = landsat5.select(l7_bands,rename_bands); // this renames the bands
+var l7 = landsat7.select(l7_bands,rename_bands); // this renames the bands
+var l8 = landsat8.select(l8_bands,rename_bands); // this renames the bands
+
+// Gather image collection (surface reflectance) 
+// and filter by date range, geographic point location, and cloud coverage (less than 10)
+var l5_ic = l5.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+
+var l7_ic = l7.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+                    
+var l8_ic = l8.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+
+// Calibrate L8 to L7
+var l8_ic_xcal = l8_ic.map(function(img){  //define a function that will be mapped to l8_ic on an image by image basis
+  var xcal_bands = XCAL_BANDS.map(function(band_name){ //the apply a function that will map the XCAL_BANDS that we defined above 
+    var band = img.select([band_name]); //the variable band will selected the band name from the image
+    var bandCoeff = ee.Feature(xcal_table.filterMetadata('band','equals',band_name).first()); //this variable will use the xcal_table and filter using the metadata for band equals band name and then take the first
+    var bandOffset = ee.Number(bandCoeff.get('offset')); //this variable will take the bandCoeff defined above and get the offset
+    var bandSlope = ee.Number(bandCoeff.get('slope')); //this variable will take the bandCoeff defined above and get the slope
+    var band_xcal = band.multiply(bandSlope).add(bandOffset); // define a variable that takes the band multiplies it by the bandSlope and adds the bandOffset
+    return band_xcal}); //finally the function returns a band that is cross calibrated
+  
+  var xcal_img = ee.Image([xcal_bands.get(0),xcal_bands.get(1),xcal_bands.get(2),
+                            xcal_bands.get(3),xcal_bands.get(4),xcal_bands.get(5)]).toInt16(); // define a variable that will take an image and acquire the xcal_bands associated with 0, 1, 2, 3, 4, 5 and cast the value as a 16-bit integer 
+  xcal_img = xcal_img.addBands(img.select('pixel_qa'),['pixel_qa']); //stays unsigned int8; now add the pixel_qa band to the image we defined above
+
+  xcal_img = ee.Image(xcal_img.copyProperties(img)); //still omits system properties; copy properties to image
+  xcal_img = ee.Image(xcal_img.set( //set the metedata properties for the image defined below
+                      'system:id',img.get('system:id'), //get the system:id associated with the image
+                      'system:footprint',img.get('system:footprint'), //get the system:footprint associated with the image
+                      'system:index',img.get('system:index'), //get the system:index associated with the image
+                      'system:time_end',img.get('system:time_end'), //get the system:time_end associated with the image
+                      'system:time_start',img.get('system:time_start'), //get the system:time_start associated with the image
+                      'xcal','true'));
+  return xcal_img.rename(['blue','green','red','nir','swir1','swir2','pixel_qa']);//finally return the xcal_image with the bands renamed
+});
+
+var xcal_landsat = ee.ImageCollection(l5_ic.merge(l7_ic).merge(l8_ic_xcal));// now combine landsat 5, 7, and 8
+xcal_landsat = xcal_landsat.sort('system:time_end'); // then sort the xcal_landsat by system:time_end
+
+// Filter calibrated collection of Landsat for growing season months
+var landsat_xcal_all = xcal_landsat.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(5,9,'month'))
+    .filter(ee.Filter.calendarRange(1990,2017,'year')) 
+    .sort('system:index'); 
+
+// Function to calculate and add NBR, NDMI, EVI, NDVI band 
+function addNBR(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var nbr = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - SWIR2) / (NIR + SWIR2)*1000', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'SWIR2': image.select('swir2')}); //select the nir band to be used in the expression
+  var img_nbr = image.addBands(nbr); // nowadd the nbr band to the image 
+  return img_nbr; //finally it returns the variable we created in the line above
+}// end of the function
+
+ 
+function addNDMI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var ndmi = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - SWIR1) / (NIR + SWIR1)*1000', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'SWIR1': image.select('swir1')}); //select the nir band to be used in the expression
+  var img_ndmi = image.addBands(ndmi); // nowadd the nbr band to the image 
+  return img_ndmi; //finally it returns the variable we created in the line above
+}// end of the function
+
+ 
+function addEVI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var evi = image.expression( //create variable evi that is a mathematical expression
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
+      'NIR': image.select('nir'),
+      'RED': image.select('red'),
+      'BLUE': image.select('blue')
+}); //select the nir band to be used in the expression
+  var img_evi = image.addBands(evi); // nowadd the evi band to the image 
+  return img_evi; //finally it returns the variable we created in the line above
+}// end of the function
+
+function addNDVI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var ndvi = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - RED) / (NIR + RED)', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'RED': image.select('red')}); //select the nir band to be used in the expression
+  var img_ndvi = image.addBands(ndvi); // nowadd the nbr band to the image 
+  return img_ndvi; //finally it returns the variable we created in the line above
+}// end of the function
+
+
+// Cloud Mask for pixel_qa
+var getQABits = function(image, start, end, newName) {  // Compute the bits we need to extract.
+    var pattern = 0;
+    for (var i = start; i <= end; i++) {
+       pattern += Math.pow(2, i);
+    }
+    // Return a single band image of the extracted QA bits, giving the band
+    // a new name.
+    return image.select([0], [newName])
+                  .bitwiseAnd(pattern)
+                  .rightShift(start);
+};
+
+// A function to mask out cloudy pixels.
+var cloud_shadows = function(image) {
+  // Select the QA band.
+  var QA = image.select(['pixel_qa']);
+  // Get the internal_cloud_algorithm_flag bit.
+  return getQABits(QA, 3,3, 'Cloud_shadows').eq(0);
+  // Return an image masking out cloudy areas.
+};
+
+// A function to mask out cloudy pixels.
+var clouds = function(image) {
+  // Select the QA band.
+  var QA = image.select(['pixel_qa']);
+  // Get the internal_cloud_algorithm_flag bit.
+  return getQABits(QA, 5,5, 'Cloud').eq(0);
+  // Return an image masking out cloudy areas.
+};
+
+var maskClouds = function(image) {
+  var cs = cloud_shadows(image);
+  var c = clouds(image);
+  image = image.updateMask(cs);
+  return image.updateMask(c);
+};
+
+// Map Indices and cloud mask to image collection then rename bands to index names
+var landsat_full = landsat_xcal_all.map(addNBR).map(addNDMI).map(addEVI).map(addNDVI).map(maskClouds);
+var landsat_full_bands = ['blue','green','red','nir','swir1','swir2','pixel_qa','nir_1','nir_2','constant','nir_3'];
+var rename_bands2 = ['blue','green','red','nir','swir1','swir2','pixel_qa','nbr','ndmi','evi','ndvi'];
+var landsatfull = landsat_full.select(landsat_full_bands,rename_bands2); 
+
+//------------------     Outbreak Severity      ----------------------------------//
+// Prebeetle outbreak
+var prebeetle = ee.Image(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(6,9,'month'))
+    .filter(ee.Filter.calendarRange(1990,1995,'year')) 
+    .sort('CLOUD_COVER') 
+    .first());   
+
+var prebeetle_ndmi = prebeetle.select('ndmi').rename('ndmiprebeetle');
+var withprebeetle_ndmi = prebeetle_ndmi.int();
+var prebeetle_ndvi = prebeetle.select('ndvi').rename('ndviprebeetle');
+
+// Postbeetle outbreak
+var beetle = ee.ImageCollection(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(5,9,'month'))
+    .filter(ee.Filter.calendarRange(2005,2006,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50) 
+    .sort('CLOUD_COVER', false)); 
+    //.first()); //return the first image 
+
+
+var postbeetle = beetle.qualityMosaic('ndmi'); //composite due to scanline issue
+//var beetle_ndmi = beetle_mosaic.select('ndmi').rename('ndmibeetle');
+
+
+var dndmi = prebeetle.subtract(postbeetle).select('ndmi');
+var withdndmi = dndmi.int().rename('dndmi');
+
+//-------------------       Burn severity dNBR      -----------------------------//
+
+// Prefire NBR
+var prefire = ee.Image(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(7,8,'month'))
+    .filter(ee.Filter.calendarRange(2013,2013,'year')) 
+    .sort('CLOUD_COVER') 
+    .first());   
+
+var prefire_nbr = prefire.select('nbr').rename('nbrprefire');
+var withprefire_nbr = prefire_nbr.int();
+var prefire_ndvi = prefire.select('ndvi').rename('ndviprefire');
+
+
+// Postfire NBR
+var postfire = ee.Image(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(5,9,'month'))
+    .filter(ee.Filter.calendarRange(2014,2014,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50) 
+    .sort('CLOUD_COVER', false) 
+    .first());  
+
+var postfire_nbr = postfire.select('nbr');
+var withpostfire_nbr = postfire_nbr.int().rename('post_nbr');
+
+// Caluculate dNBR & RdNBR (BURN SEVERITY)
+var dnbr = prefire.subtract(postfire).select('nbr'); 
+var withdnbr = dnbr.int().rename('dnbr');
+var rdnbr_bottom = prefire.divide(1000).abs().sqrt().select('nbr');
+var rdnbr = dnbr.divide(rdnbr_bottom); 
+var withrdnbr = rdnbr.int().rename('rdnbr');
+
+//----------------------     Topographic variables      ---------------------------------//
+
+var study = ee.ImageCollection(NRCanDEM.filterBounds(area)) 
+    
+// Get the projection from the first of these images
+var proj = study.first().projection();
+
+// Create the mosaic and clip down to study area
+var mosaic = study.mosaic().clip(area);
+
+// Create the derived terrain layers
+var terrain = ee.Terrain.products(mosaic.reproject(proj));
+
+// Create topography variables based on 
+var elevation = mosaic.select('elevation')
+var slppct = terrain.select(['slope'], ['SLPPCT']);
+var aspect = terrain.select('aspect');
+var asptr = aspect.multiply(-1.0).add(45.0)
+  .divide(180.0).multiply(Math.PI).cos().add(1.0)
+  .rename('ASPTR');
+var tpi450 = elevation.subtract(elevation.focal_mean(15))
+  .rename('TPI450');
+var latlon = ee.Image.pixelLonLat();
+var lon = latlon.select(['longitude'], ['LON']);
+var lat = latlon.select(['latitude'], ['LAT']);
+
+var all_topo = elevation
+  .addBands(slppct)
+  .addBands(asptr)
+  .addBands(tpi450)
+  .addBands(lat)
+  .addBands(lon);
+
+// Stack all data and extract to table
+var all = elevation
+  .addBands(slppct)
+  .addBands(asptr)
+  .addBands(tpi450)
+  .addBands(lat)
+  .addBands(lon)
+  .addBands(withdnbr)
+  .addBands(withrdnbr)
+  .addBands(withdndmi)
+  .addBands(prefire_ndvi);
+
+// Clip all data and add burning conditions, which are alread clipped to the perimeter 
+var clip_all = all.clip(twforest);
+var all_bc = clip_all.addBands(twbc).addBands(twdob).addBands(twfwi); 
+
+// Extract pixel values from with GRTS sample (see R code for sample) 
+var input_img = all_bc;
+var training_pts_collection = twsample;
+var scale_value = 30;
+
+var training_extract = input_img.sampleRegions({ 
+  collection: training_pts_collection, 
+  scale: scale_value 
+});
+
+// Export data to csv file in google drive
+var date = '2019-09-02' 
+Export.table.toDrive({
+  collection:training_extract,
+  description:date+'_twsampleGRTS',
+  fileFormat:'CSV'});
+  
+
+//++++++++++++++++++++++++++++++++++++++THE END ++++++++++++++++++++++++++++++++++//
+
+
+```
+
+# Chelaslie Code
+
+https://code.earthengine.google.com/526c99bc105e0bff4ed588dd13596abc
+
+```{js}
+// Chelaslie Fire - Script to develop beetle outbreak severity and burn severity from Landsat data as well as 
+//        topographic variables from the Canadian DEM for the Chelaslie fire (R10070) 
+//        that burned in 2014 in British Columbia, Canada. Spatial data development is then exported and 
+//        used in a boosted regression tree (BRT) analysis to evaluate drivers of burn severity
+//  Script by Anna Talucci - Oregon State University
+//  For updates or questions on the code please contact:
+//      Anna Talucci, actalucci@gmail.com
+//
+// Metrics created include:
+//    NBR:      normalized burn ratio, uses NIR band and SWIR2, for pre- and post-fire
+//    RdNBR:    relativized delta normalized burn ratio as a measure of burn severity
+//    NDMI:     normalized differenced moisture index for pre- and post-outbreak
+//    dNDMI:    delta normalized differenced moisture index as a measure of outbreak severity
+//    NDVI:     normalized differenced vegetation index as a measure of prefire vegetation conditions
+//    
+// Code for Chelaslie Fire (R10070) that burned starting July 2014 
+//    Located in Entiako Provincial Park, British Columbia, Canada
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//-------------------------      Inputs     --------------------------------------------//
+Map.setCenter(-125.5404, 53.1898, 12); 
+
+// Burning conditions 
+var chbc = ee.Image("users/actalucci/2014_R10070_burncon");
+var chbc = chbc.rename('burnconditions');
+
+var chdob = ee.Image("users/actalucci/2014_R10070_dob");
+var chdob = chdob.rename('dob');
+
+var chfwi = ee.Image("users/actalucci/2014_R10070_fwi");
+var chfwi = chfwi.rename('fwi');
+
+// Fire Perimeter
+var chforest = ee.FeatureCollection('users/actalucci/ch_R10070_2014_Forestonly');
+Map.addLayer(chforest, {}, 'chforest');
+
+// Landsat 5, 7, and 8 Surface Reflectance Tier 1 collections
+var landsat8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR'),
+    landsat7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR'),
+    landsat5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR');
+    
+// Canadian DEM
+var NRCanDEM = ee.ImageCollection('NRCan/CDEM');
+
+// GRTS Sample points
+var chsample = ee.FeatureCollection('users/actalucci/chsample');
+var twsample = ee.FeatureCollection('users/actalucci/twsample3');
+var ensample = ee.FeatureCollection('users/actalucci/ensample');
+var pts = ee.FeatureCollection(twsample.merge(ensample.merge(chsample)));
+
+// geometry box for subsetting DEM data
+var area = /* color: #d63000 */ee.Geometry.Polygon(
+        [[[-127.1118380703125, 53.638837562258864],
+          [-127.07275051939462, 52.90445418177282],
+          [-124.29320950376962, 52.944194099843344],
+          [-124.55413479673837, 53.831970256964254]]]);
+
+
+
+//-----------------------Calibration Harmonization (Data Prep)--------------------------//
+
+// Add calibration table 
+var xcal_table = ee.FeatureCollection('users/actalucci/Roy_xcal'); //define variable for calibration table Following Roy et al
+
+// Gather Images and define band names 
+// Define bands and rename
+var l7_bands = ['B1','B2','B3','B4','B5','B7','pixel_qa']; // define landsat 7 bands, these also match landsat 5 bands
+var l8_bands = ['B2','B3','B4','B5','B6','B7','pixel_qa']; // define landsat 8 bands
+var rename_bands = ['blue','green','red','nir','swir1','swir2','pixel_qa']; //define how we will rename bands so that we can have the same bands across all landsat data - 5, 7, and 8
+var XCAL_BANDS = ee.List(['blue', 'green', 'red', 'nir', 'swir1', 'swir2']); //define variable to use in the cross calibration that is a list of the band names
+
+// Rename bands
+var l5 = landsat5.select(l7_bands,rename_bands); // this renames the bands
+var l7 = landsat7.select(l7_bands,rename_bands); // this renames the bands
+var l8 = landsat8.select(l8_bands,rename_bands); // this renames the bands
+
+// Gather image collection (surface reflectance) 
+// and filter by date range, geographic point location, and cloud coverage (less than 10)
+var l5_ic = l5.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+
+var l7_ic = l7.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+                    
+var l8_ic = l8.filterDate('1990-01-01', '2017-12-31') 
+                    .filterBounds(pts) 
+                    .filterMetadata('CLOUD_COVER', 'less_than', 10); 
+
+// Calibrate L8 to L7
+var l8_ic_xcal = l8_ic.map(function(img){  //define a function that will be mapped to l8_ic on an image by image basis
+  var xcal_bands = XCAL_BANDS.map(function(band_name){ //the apply a function that will map the XCAL_BANDS that we defined above 
+    var band = img.select([band_name]); //the variable band will selected the band name from the image
+    var bandCoeff = ee.Feature(xcal_table.filterMetadata('band','equals',band_name).first()); //this variable will use the xcal_table and filter using the metadata for band equals band name and then take the first
+    var bandOffset = ee.Number(bandCoeff.get('offset')); //this variable will take the bandCoeff defined above and get the offset
+    var bandSlope = ee.Number(bandCoeff.get('slope')); //this variable will take the bandCoeff defined above and get the slope
+    var band_xcal = band.multiply(bandSlope).add(bandOffset); // define a variable that takes the band multiplies it by the bandSlope and adds the bandOffset
+    return band_xcal}); //finally the function returns a band that is cross calibrated
+  
+  var xcal_img = ee.Image([xcal_bands.get(0),xcal_bands.get(1),xcal_bands.get(2),
+                            xcal_bands.get(3),xcal_bands.get(4),xcal_bands.get(5)]).toInt16(); // define a variable that will take an image and acquire the xcal_bands associated with 0, 1, 2, 3, 4, 5 and cast the value as a 16-bit integer 
+  xcal_img = xcal_img.addBands(img.select('pixel_qa'),['pixel_qa']); //stays unsigned int8; now add the pixel_qa band to the image we defined above
+
+  xcal_img = ee.Image(xcal_img.copyProperties(img)); //still omits system properties; copy properties to image
+  xcal_img = ee.Image(xcal_img.set( //set the metedata properties for the image defined below
+                      'system:id',img.get('system:id'), //get the system:id associated with the image
+                      'system:footprint',img.get('system:footprint'), //get the system:footprint associated with the image
+                      'system:index',img.get('system:index'), //get the system:index associated with the image
+                      'system:time_end',img.get('system:time_end'), //get the system:time_end associated with the image
+                      'system:time_start',img.get('system:time_start'), //get the system:time_start associated with the image
+                      'xcal','true'));
+  return xcal_img.rename(['blue','green','red','nir','swir1','swir2','pixel_qa']);//finally return the xcal_image with the bands renamed
+});
+
+var xcal_landsat = ee.ImageCollection(l5_ic.merge(l7_ic).merge(l8_ic_xcal));// now combine landsat 5, 7, and 8
+xcal_landsat = xcal_landsat.sort('system:time_end'); // then sort the xcal_landsat by system:time_end
+
+// Filter calibrated collection of Landsat for growing season months
+var landsat_xcal_all = xcal_landsat.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(5,9,'month'))
+    .filter(ee.Filter.calendarRange(1990,2017,'year')) 
+    .sort('system:index'); 
+
+// Function to calculate and add NBR, NDMI, EVI, NDVI band 
+function addNBR(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var nbr = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - SWIR2) / (NIR + SWIR2)*1000', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'SWIR2': image.select('swir2')}); //select the nir band to be used in the expression
+  var img_nbr = image.addBands(nbr); // nowadd the nbr band to the image 
+  return img_nbr; //finally it returns the variable we created in the line above
+}// end of the function
+
+ 
+function addNDMI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var ndmi = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - SWIR1) / (NIR + SWIR1)*1000', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'SWIR1': image.select('swir1')}); //select the nir band to be used in the expression
+  var img_ndmi = image.addBands(ndmi); // nowadd the nbr band to the image 
+  return img_ndmi; //finally it returns the variable we created in the line above
+}// end of the function
+
+ 
+function addEVI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var evi = image.expression( //create variable evi that is a mathematical expression
+    '2.5 * ((NIR - RED) / (NIR + 6 * RED - 7.5 * BLUE + 1))', {
+      'NIR': image.select('nir'),
+      'RED': image.select('red'),
+      'BLUE': image.select('blue')
+}); //select the nir band to be used in the expression
+  var img_evi = image.addBands(evi); // nowadd the evi band to the image 
+  return img_evi; //finally it returns the variable we created in the line above
+}// end of the function
+
+function addNDVI(image) { //here we are creating a function; this line defines the funtion, and the next three lines will define what the function does
+  var ndvi = image.expression( //create variable nbr that is a mathematical expression
+'(NIR - RED) / (NIR + RED)', // Take the nir band and subtract the swir2 band and divide that by the addition of the nir band and swir2 band; then multiple by 1000 to scale 
+{'NIR': image.select('nir'), //select the nir band to be used in the expression
+'RED': image.select('red')}); //select the nir band to be used in the expression
+  var img_ndvi = image.addBands(ndvi); // nowadd the nbr band to the image 
+  return img_ndvi; //finally it returns the variable we created in the line above
+}// end of the function
+
+
+// Cloud Mask for pixel_qa
+var getQABits = function(image, start, end, newName) {  // Compute the bits we need to extract.
+    var pattern = 0;
+    for (var i = start; i <= end; i++) {
+       pattern += Math.pow(2, i);
+    }
+    // Return a single band image of the extracted QA bits, giving the band
+    // a new name.
+    return image.select([0], [newName])
+                  .bitwiseAnd(pattern)
+                  .rightShift(start);
+};
+
+// A function to mask out cloudy pixels.
+var cloud_shadows = function(image) {
+  // Select the QA band.
+  var QA = image.select(['pixel_qa']);
+  // Get the internal_cloud_algorithm_flag bit.
+  return getQABits(QA, 3,3, 'Cloud_shadows').eq(0);
+  // Return an image masking out cloudy areas.
+};
+
+// A function to mask out cloudy pixels.
+var clouds = function(image) {
+  // Select the QA band.
+  var QA = image.select(['pixel_qa']);
+  // Get the internal_cloud_algorithm_flag bit.
+  return getQABits(QA, 5,5, 'Cloud').eq(0);
+  // Return an image masking out cloudy areas.
+};
+
+var maskClouds = function(image) {
+  var cs = cloud_shadows(image);
+  var c = clouds(image);
+  image = image.updateMask(cs);
+  return image.updateMask(c);
+};
+
+// Map Indices and cloud mask to image collection then rename bands to index names
+var landsat_full = landsat_xcal_all.map(addNBR).map(addNDMI).map(addEVI).map(addNDVI).map(maskClouds);
+var landsat_full_bands = ['blue','green','red','nir','swir1','swir2','pixel_qa','nir_1','nir_2','constant','nir_3'];
+var rename_bands2 = ['blue','green','red','nir','swir1','swir2','pixel_qa','nbr','ndmi','evi','ndvi'];
+var landsatfull = landsat_full.select(landsat_full_bands,rename_bands2); 
+
+//------------------     Outbreak Severity      ----------------------------------//
+
+// Pre-beetle outbreak
+var prebeetle = ee.ImageCollection(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(6,9,'month'))
+    .filter(ee.Filter.calendarRange(1995,1995,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50)
+    .sort('CLOUD_COVER')); 
+
+var prebeetle_mosaic = prebeetle.qualityMosaic('ndmi');
+var prebeetle_ndmi = prebeetle_mosaic.select('ndmi').rename('ndmiprebeetle');
+
+// Post-beelte outbreak
+var beetle = ee.Image(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(6,9,'month'))
+    .filter(ee.Filter.calendarRange(2006,2006,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50)
+    .sort('CLOUD_COVER') 
+    .first()); 
+
+var beetle_ndmi = beetle.select('ndmi').rename('ndmibeetle');
+var withbeetle_ndmi = beetle_ndmi.int();
+var dndmi = prebeetle_mosaic.subtract(beetle).select('ndmi');
+var withdndmi = dndmi.int().rename('dndmi');
+
+//-------------------    Burn severity (RdNBR)    -----------------------------//
+
+// Prefire NBR (generate mosaic due to scanline error)
+var prefire = ee.ImageCollection(landsatfull.filterBounds(pts)
+    .filter(ee.Filter.calendarRange(6,7,'month'))
+    .filter(ee.Filter.calendarRange(2013,2014,'year')) 
+    .filterMetadata('WRS_PATH', 'equals', 50) 
+    .sort('CLOUD_COVER')) 
+    //.first()); //return the first image  
+//print(prefire)
+var nbrmosaic = prefire.qualityMosaic('nbr')
+var prefire_nbr = nbrmosaic.select('nbr').rename('nbrprefire');
+var withprefire_nbr = prefire_nbr.int();
+var ndvimosaic = prefire.qualityMosaic('ndvi')
+var prefire_ndvi = ndvimosaic.select('ndvi').rename('ndviprefire');
+
+// Postfire NBR 
+var postfire = ee.Image(landsatfull.filterBounds(pts) 
+    .filter(ee.Filter.calendarRange(6,9,'month'))
+    .filter(ee.Filter.calendarRange(2015,2015,'year')) 
+    .sort('CLOUD_COVER')
+    .filterMetadata('WRS_PATH', 'equals', 50) 
+    .first()); //return the first image 
+//print(postfire, 'postfire')
+var postfire_nbr = postfire.select('nbr');
+var withpostfire_nbr = postfire_nbr.int().rename('post_nbr');
+
+// Caluculate dNBR & RdNBR (BURN SEVERITY)
+var dNBR_fire = nbrmosaic.subtract(postfire).select('nbr');
+var withdnbr = dNBR_fire.int().rename('dnbr');
+var rdnbr_bottom = nbrmosaic.divide(1000).abs().sqrt().select('nbr');
+var rdnbr = dNBR_fire.divide(rdnbr_bottom); 
+var withrdnbr = rdnbr.int().rename('rdnbr');
+
+
+//----------------------   Topographic variables      ----------------------------//
+var study = ee.ImageCollection(NRCanDEM.filterBounds(area)); 
+
+// Get the projection from the first of these images
+var proj = study.first().projection();
+
+// Create the mosaic and clip down to study area
+var mosaic = study.mosaic().clip(area);
+
+// Create the derived terrain layers
+var terrain = ee.Terrain.products(mosaic.reproject(proj));
+
+// Create topography variables based on 
+var elevation = mosaic.select('elevation');
+
+var slppct = terrain.select(['slope'], ['SLPPCT']);
+var aspect = terrain.select('aspect');
+var asptr = aspect.multiply(-1.0).add(45.0) //Beer's Trasnformation 'Aspect Transformation in Site Productivity Research'
+  .divide(180.0).multiply(Math.PI).cos().add(1.0)
+  .rename('ASPTR');
+var tpi450 = elevation.subtract(elevation.focal_mean(15))
+  .rename('TPI450');
+var latlon = ee.Image.pixelLonLat();
+var lon = latlon.select(['longitude'], ['LON']);
+var lat = latlon.select(['latitude'], ['LAT']);
+
+var all_topo = elevation
+  .addBands(slppct)
+  .addBands(asptr)
+  .addBands(tpi450)
+  .addBands(lat)
+  .addBands(lon);
+
+
+// Stack data and extract to table
+var all = elevation
+  .addBands(slppct)
+  .addBands(asptr)
+  .addBands(tpi450)
+  .addBands(lat)
+  .addBands(lon)
+  .addBands(withdnbr)
+  .addBands(withrdnbr)
+  .addBands(withdndmi)
+  .addBands(prefire_ndvi);
+
+// clip all and add burning conditions
+var clip_all = all.clip(chforest);
+var all_bc = clip_all.addBands(chbc).addBands(chdob).addBands(chfwi); 
+
+// Extract Data from pixels
+var input_img = all_bc;
+var grts_chsample = chsample;
+var scale_value = 30;
+
+var data_extract = input_img.sampleRegions({ 
+  collection: grts_chsample, 
+  scale: scale_value 
+});
+
+//Let's export the training data into a CSV 
+var date = '2019-09-02'; 
+Export.table.toDrive({
+  collection:data_extract,
+  description:date+'_chsampleGRTS',
+  fileFormat:'CSV'});
+
+
+//++++++++++++++++++++++++++++++++++++++THE END ++++++++++++++++++++++++++++++++++//
+```
