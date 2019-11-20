@@ -505,4 +505,39 @@ grid_all3
 ```{r eval=FALSE, include=FALSE}
 ggsave("../figs/2019-09-24_partialplots_legendright.tiff", plot = grid_final2 , width = 6, height = 7, units = c("in"), dpi=600 )
 ```
+
+```{r fig.height=7, fig.width=15}
+grid_all4 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, legend4, nrow = 2) + 
+   draw_label("dead/sparse", x = .21, y = .84, size = 10) +
+   draw_label("live/dense", x = .41, y = .84, size = 10) +
+   draw_label("dead/sparse", x = .7, y = .84, size = 10) +
+   draw_label("live/dense", x = .9, y = .84, size = 10) +
+   draw_label("moderate", x = .25, y = .59, size = 10) +
+   draw_label("extreme", x = .40, y = .59, size = 10) +
+   draw_label("moderate", x = .75, y = .59, size = 10) +
+   draw_label("extreme", x = .89, y = .59, size = 10) +
+   draw_label("low", x = .14, y = .34, size = 10) +
+   draw_label("high", x = .44, y = .34, size = 10) +
+   draw_label("low", x = .64, y = .34, size = 10) +
+   draw_label("high", x = .94, y = .34, size = 10) +
+   draw_label("no\nmortality", x = .21, y = .1, size = 10) +
+   draw_label("high\nmortality", x = .38, y = .1, size = 10) +
+   draw_label("(a)", x = .13, y = .98, size = 10) +
+   draw_label("(b)", x = .63, y = .98, size = 10) +
+   draw_label("(c)", x = .13, y = .73, size = 10) +
+   draw_label("(d)", x = .63, y = .73, size = 10) +
+   draw_label("(e)", x = .13, y = .48, size = 10) +
+   draw_label("(f)", x = .63, y = .48, size = 10) +
+   draw_label("(g)", x = .13, y = .23, size = 10)
+grid_all4
+```
+
+### Full figure with legend on Right
+```{r fig.height=7, fig.width=6}
+( grid_final3 = cowplot::plot_grid(header, grid_all4, ncol=1, rel_heights = c(0.04, 1))  )
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figs/2019-11-19_partialplots_legendright_poster.tiff", plot = grid_final3, width = 15, height = 7, units = c("in"), dpi=600 )
+```
 **THE END**
