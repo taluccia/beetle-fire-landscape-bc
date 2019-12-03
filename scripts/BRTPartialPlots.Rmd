@@ -165,14 +165,13 @@ legend.plot4 <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype
               panel.border = element_rect(color = "black", size = 1.25),
               panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
               legend.position = "right",
-              legend.title = element_text(size = 11),
-              legend.text = element_text(size = 11)) +
+              legend.title = element_text(size = 24, color = "black"),
+              legend.text = element_text(size = 20, color = "black")) +
         
         scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
         #scale_x_continuous(labels = comma) +
         #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.5,0,0.5,1,1.5))
+        geom_hline(yintercept=0)
 legend.plot4
 ```
 
@@ -186,12 +185,14 @@ pardep_plot_mods4 = function(data, x_var) {
      ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
                 geom_smooth(span = 0.5, se = FALSE) + # choose span? 
                 scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted Function",
+                labs(y = "Fitted function",
                      x = x_var) +
                 theme_bw(base_size = 12) +
                 theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
-                theme(axis.text.x = element_text(size = 10, color = "black"),
-                      axis.text.y = element_text(size = 10, color = "black"),
+                theme(axis.text.x = element_text(size = 12, color = "black"),
+                      axis.text.y = element_text(size = 12, color = "black"),
+                      axis.title.x = element_text(size=16),
+                      axis.title.y = element_text(size=16),
                       panel.border = element_rect(color = "black", size = 1.25),
                       panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
                       legend.position = "none") +
@@ -332,8 +333,8 @@ legend.plot3 <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype
               panel.border = element_rect(color = "black", size = 1.25),
               panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
               legend.position = "bottom",
-              legend.title = element_text(size = 10),
-              legend.text = element_text(size = 10)) +
+              legend.title = element_text(size = 14),
+              legend.text = element_text(size = 14)) +
         
         scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
         #scale_x_continuous(labels = comma) +
@@ -353,12 +354,14 @@ pardep_plot_mods3 = function(data, x_var) {
      ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
                 geom_smooth(span = 0.5, se = FALSE) + # choose span? 
                 scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted Function",
+                labs(y = "Fitted function",
                      x = x_var) +
                 theme_bw(base_size = 12) +
                 theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
-                theme(axis.text.x = element_text(size = 10, color = "black"),
-                      axis.text.y = element_text(size = 10, color = "black"),
+                theme(axis.text.x = element_text(size = 12, color = "black"),
+                      axis.text.y = element_text(size = 12, color = "black"),
+                      axis.title.x = element_text(size=16),
+                      axis.title.y = element_text(size=16),
                       panel.border = element_rect(color = "black", size = 1.25),
                       panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
                       legend.position = "none") +
@@ -511,34 +514,34 @@ ggsave("../figures/2019-09-24_partialplots_legendright.tiff", plot = grid_final2
 
 ```{r fig.height=7, fig.width=15}
 grid_all4 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi,  all_mod_plots3$ndviprefire, all_mod_plots3$fwi, all_mod_plots3$elevation,  legend4, nrow = 2) + 
-   draw_label("dead/sparse", x = .1, y = .59, size = 10) +
-   draw_label("live/dense", x = .2, y = .59, size = 10) +
-   draw_label("dead/sparse", x = .1, y = .1, size = 10) +
-   draw_label("live/dense", x = .2, y = .1, size = 10) +
-   draw_label("moderate", x = .35, y = .59, size = 10) +
-   draw_label("extreme", x = .45, y = .59, size = 10) +
-   draw_label("moderate", x = .35, y = .1, size = 10) +
-   draw_label("extreme", x = .45, y = .1, size = 10) +
-   draw_label("low", x = .57, y = .59, size = 10) +
-   draw_label("high", x = .7, y = .59, size = 10) +
-   draw_label("low", x = .57, y = .1, size = 10) +
-   draw_label("high", x = .7, y = .1, size = 10) +
-   draw_label("no\nmortality", x = .82, y = .6, size = 10) +
-   draw_label("high\nmortality", x = .95, y = .6, size = 10) +
-   draw_label("(a)", x = .05, y = .98, size = 10) +
-   draw_label("(b)", x = .3, y = .98, size = 10) +
-   draw_label("(c)", x = .55, y = .98, size = 10) +
-   draw_label("(d)", x = .8, y = .98, size = 10) +
-   draw_label("(e)", x = .05, y = .48, size = 10) +
-   draw_label("(f)", x = .3, y = .48, size = 10) +
-   draw_label("(g)", x = .55, y = .48, size = 10)
+   draw_label("dead/\nsparse", x = .1, y = .62, size = 16) +
+   draw_label("live/\ndense", x = .2, y = .62, size = 16) +
+   draw_label("dead/\nsparse", x = .1, y = .12, size = 16) +
+   draw_label("live/\ndense", x = .2, y = .12, size = 16) +
+   draw_label("moderate", x = .35, y = .61, size = 16) +
+   draw_label("extreme", x = .45, y = .61, size = 16) +
+   draw_label("moderate", x = .35, y = .11, size = 16) +
+   draw_label("extreme", x = .45, y = .11, size = 16) +
+   draw_label("low", x = .57, y = .61, size = 16) +
+   draw_label("high", x = .7, y = .61, size = 16) +
+   draw_label("low", x = .57, y = .11, size = 16) +
+   draw_label("high", x = .7, y = .11, size = 16) +
+   draw_label("no\nmortality", x = .83, y = .62, size = 16) +
+   draw_label("high\nmortality", x = .96, y = .62, size = 16) +
+   draw_label("(a)", x = .06, y = .98, size = 14) +
+   draw_label("(b)", x = .31, y = .98, size = 14) +
+   draw_label("(c)", x = .56, y = .98, size = 14) +
+   draw_label("(d)", x = .81, y = .98, size = 14) +
+   draw_label("(e)", x = .06, y = .48, size = 14) +
+   draw_label("(f)", x = .31, y = .48, size = 14) +
+   draw_label("(g)", x = .56, y = .48, size = 14) 
 grid_all4
 ```
 
 
 ```{r}
-row1 = ggdraw() + draw_label('Outbreak severity included', size = 12, fontface = 'bold', angle = 90) 
-row2 = ggdraw() + draw_label('Outbreak severity excluded', size = 12, fontface = 'bold', angle = 90) 
+row1 = ggdraw() + draw_label('Outbreak severity\nincluded', size = 20, fontface = 'bold', angle = 90) 
+row2 = ggdraw() + draw_label('Outbreak severity\nexcluded', size = 20, fontface = 'bold', angle = 90) 
 header2 = cowplot::plot_grid(row1, row2, nrow=2)
 header2
 ```
@@ -548,6 +551,6 @@ header2
 ```
 
 ```{r eval=FALSE, include=FALSE}
-ggsave("../figures/2019-11-19_partialplots_legendright_poster.tiff", plot = grid_final4, width = 15, height = 7, units = c("in"), dpi=600 )
+ggsave("../figures/2019-12-03_partialplots_legendright_poster.tiff", plot = grid_final4, width = 15, height = 7, units = c("in"), dpi=600 )
 ```
 **THE END**
