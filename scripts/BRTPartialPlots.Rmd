@@ -383,10 +383,10 @@ legendman <- get_legend(legend.manuscript)
 
 ```{r fig.height=7, fig.width=6}
 grid_all2 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, legendman, ncol = 2) + 
-   draw_label("dead/sparse", x = .21, y = .84, size = 10) +
-   draw_label("live/dense", x = .41, y = .84, size = 10) +
-   draw_label("dead/sparse", x = .7, y = .84, size = 10) +
-   draw_label("live/dense", x = .9, y = .84, size = 10) +
+   draw_label("sparse/dead", x = .21, y = .835, size = 10) +
+   draw_label("dense/live", x = .41, y = .835, size = 10) +
+   draw_label("sparse/dead", x = .7, y = .835, size = 10) +
+   draw_label("dense/live", x = .9, y = .835, size = 10) +
    draw_label("moderate", x = .25, y = .59, size = 10) +
    draw_label("extreme", x = .40, y = .59, size = 10) +
    draw_label("moderate", x = .75, y = .59, size = 10) +
