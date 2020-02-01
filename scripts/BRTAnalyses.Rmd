@@ -700,7 +700,7 @@ BRT.modelF6.relinf
 ```
 
 
-# MODEL F7 & F8: Remove prefire vegetationvariable.
+# MODEL F7, F8, F9: Remove prefire vegetation variable.
 
 
 ## Model F7: Split FWI - FWI HI 
@@ -732,11 +732,11 @@ summary(brt.modelF7,
 ### Save model output as external object for mapping later or posterity
 
 ```{r}
-save(brt.modelF7, file = "../output/finalmodels_mt/BRTF7_model_data_output.rda")
+save(brt.modelF7, file = "../output/finalmodels/BRTF7_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels_mt/BRTF7_model_data_output.rda")
+load(file = "../output/finalmodels/BRTF7_model_data_output.rda")
 ```
 
 ### Relative influence of predictors as part of summary gbm - for model assessment
@@ -749,12 +749,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF7, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2020-02-01_BRT_modelF7_plots.pdf")
+dev.print(pdf, "../figures/finalmodels/2020-02-01_BRT_modelF7_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF7)
-dev.print(pdf, "../figs/finalmodels_mt/2020-02-01_BRT_modelF7_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels/2020-02-01_BRT_modelF7_fits_plots.pdf")
 dev.off()
 ```
 
@@ -781,9 +781,9 @@ cv.discrim.mean=round(brt.modelF7$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.modelF7.sum=data.frame(tot.n, y.perc, brt.modelF7$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.modelF7.sum, '../output/finalmodels_mt/2020-02-01_BRT_modelF7_sum.csv', row.names = F)
+write.csv(BRT.modelF7.sum, '../output/finalmodels/2020-02-01_BRT_modelF7_sum.csv', row.names = F)
 BRT.modelF7.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.modelF7.relinf, '../output/finalmodels_mt/2020-02-01_BRT_modelF7_relinf.csv', row.names = F)
+write.csv(BRT.modelF7.relinf, '../output/finalmodels/2020-02-01_BRT_modelF7_relinf.csv', row.names = F)
 ```
 
 ```{r}
@@ -822,11 +822,11 @@ summary(brt.modelF8,
 ### Save model output as external object for mapping later or posterity
 
 ```{r}
-save(brt.modelF8, file = "../output/finalmodels_mt/BRTF8_model_data_output.rda")
+save(brt.modelF8, file = "../output/finalmodels/BRTF8_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels_mt/BRTF8_model_data_output.rda")
+load(file = "../output/finalmodels/BRTF8_model_data_output.rda")
 ```
 
 ### Relative influence of predictors as part of summary gbm - for model assessment
@@ -839,12 +839,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF8, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2020-02-01_BRT_modelF8_plots.pdf")
+dev.print(pdf, "../figures/finalmodels/2020-02-01_BRT_modelF8_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF8)
-dev.print(pdf, "../figs/finalmodels_mt/2020-02-01_BRT_modelF8_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels/2020-02-01_BRT_modelF8_fits_plots.pdf")
 dev.off()
 ```
 
@@ -871,9 +871,9 @@ cv.discrim.mean=round(brt.modelF8$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.modelF8.sum=data.frame(tot.n, y.perc, brt.modelF8$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.modelF8.sum, '../output/finalmodels_mt/2020-02-01_BRT_modelF8_sum.csv', row.names = F)
+write.csv(BRT.modelF8.sum, '../output/finalmodels/2020-02-01_BRT_modelF8_sum.csv', row.names = F)
 BRT.modelF8.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.modelF8.relinf, '../output/finalmodels_mt/2020-02-01_BRT_modelF8_relinf.csv', row.names = F)
+write.csv(BRT.modelF8.relinf, '../output/finalmodels/2020-02-01_BRT_modelF8_relinf.csv', row.names = F)
 ```
 
 ```{r}
@@ -912,11 +912,11 @@ summary(brt.modelF9,
 ### Save model output as external object for mapping later or posterity
 
 ```{r}
-save(brt.modelF9, file = "../output/finalmodels_mt/BRTF9_model_data_output.rda")
+save(brt.modelF9, file = "../output/finalmodels/BRTF9_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels_mt/BRTF9_model_data_output.rda")
+load(file = "../output/finalmodels/BRTF9_model_data_output.rda")
 ```
 
 ### Relative influence of predictors as part of summary gbm - for model assessment
@@ -929,12 +929,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF9, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2020-02-01_BRT_modelF9_plots.pdf")
+dev.print(pdf, "../figures/finalmodels/2020-02-01_BRT_modelF9_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF9)
-dev.print(pdf, "../figs/finalmodels_mt/2020-02-01_BRT_modelF9_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels/2020-02-01_BRT_modelF9_fits_plots.pdf")
 dev.off()
 ```
 
@@ -961,9 +961,9 @@ cv.discrim.mean=round(brt.modelF9$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.modelF9.sum=data.frame(tot.n, y.perc, brt.modelF9$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.modelF9.sum, '../output/finalmodels_mt/2020-02-01_BRT_modelF9_sum.csv', row.names = F)
+write.csv(BRT.modelF9.sum, '../output/finalmodels/2020-02-01_BRT_modelF9_sum.csv', row.names = F)
 BRT.modelF9.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.modelF9.relinf, '../output/finalmodels_mt/2020-02-01_BRT_modelF9_relinf.csv', row.names = F)
+write.csv(BRT.modelF9.relinf, '../output/finalmodels/2020-02-01_BRT_modelF9_relinf.csv', row.names = F)
 ```
 
 ```{r}
