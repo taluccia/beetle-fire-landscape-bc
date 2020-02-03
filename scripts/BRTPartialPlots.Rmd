@@ -65,7 +65,21 @@ brt.model4 = brt.modelF4
 
 load(file = "../output/finalmodels/BRTF5_model_data_output.rda")
 brt.model5 = brt.modelF5
+
+load(file = "../output/finalmodels/BRTF7_model_data_output.rda")
+brt.model7 = brt.modelF7
+
+load(file = "../output/finalmodels/BRTF8_model_data_output.rda")
+brt.model8 = brt.modelF8
+
+load(file = "../output/finalmodels/BRTF9_model_data_output.rda")
+brt.model9 = brt.modelF9
+
+
+
 ```
+
+
 
 
 # Manuscript figure
@@ -352,6 +366,127 @@ pardep_plot_mods3(data = pred_mods3[[1]], x_var = x_names3[[1]])
 ```{r}
 all_mod_plots3 = map2(pred_mods3, x_names3, pardep_plot_mods3)
 all_mod_plots3
+```
+
+
+# Three Variable Model - OUtbreak Severity, Elelvatio, Fire Weather
+## Make list of models and variables
+Hi_3var = brt.model7, Mod_3var = brt.model8, Full_3var = brt.model9,
+```{r}
+mods3o = list(Hi_ovar = brt.model7, Mod_ovar = brt.model8, Full_ovar = brt.model9)
+ovars = c("elevation", "fwi", "dndmi")
+names(ovars) = ovars
+ovars
+```
+
+Nicer variable names for x axis labels Must be in same order as vars
+```{r}
+x_names3 = c("Elevation (m)", "Fire weather index", "Outbreak Severity (NDMI)")
+```
+
+
+## Use nested loops for each variable and then each model within each variable
+
+ For outer loop use map() or lapply()
+ For the inner loop use imap_dfr() to use models and model names and bind together
+
+ Work out approach with a single variable
+ Goal is to get a dataset with predictions from all models stacked together for one x variable
+
+```{r}
+pred_test3o = map(ovars[[1]], function(variable) {
+     imap_dfr(mods3o, function(Model, mod.name) {
+          preddat = plot.gbm(Model, i.var = variable, return.grid = TRUE)
+          preddat$center_y = scale(preddat$y, scale = FALSE)
+          preddat$x = preddat[, 1]
+          preddat$Model = mod.name
+          preddat
+     })
+})
+
+pred_test3o
+```
+
+
+
+## If that worked, loop through all variables
+```{r}
+pred_mods3o = map(ovars, function(variable) {
+     imap_dfr(mods3o, function(model, mod.name) {
+          preddat = plot.gbm(model, i.var = variable, return.grid = TRUE)
+          preddat$center_y = scale(preddat$y, scale = FALSE)
+          preddat$x = preddat[, 1]
+          preddat$model = mod.name
+          preddat
+     })
+})
+```
+
+## Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
+```{r}
+range(bind_rows(pred_mods3o)$center_y)
+```
+
+# Plot with improved x axis names ----
+```{r}
+model_id <- ggplot(data = pred_mods3o[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
+        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
+        scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
+        scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
+        labs(y = "Fitted Function",
+             x = x_names3[[1]]) +
+        theme_bw(base_size = 14) +
+        theme(axis.text.x = element_text(size = 14, color = "black"),
+              axis.text.y = element_text(size = 14, color = "black"),
+              panel.border = element_rect(color = "black", size = 1.25),
+              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
+              legend.position = "bottom",
+              legend.title = element_text(size = 14),
+              legend.text = element_text(size = 14)) +
+        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
+        #scale_x_continuous(labels = comma) +
+        #ylim(-1.55, 1.55) +
+        geom_hline(yintercept=0)+
+        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.5,0,0.5,1,1.5))
+model_id
+```
+Leaving legend to indicate multiple models plotted.
+Remove legend in subsequent step but save this one for cowplot merger below.
+
+### Plotting function ----
+note plot.margin - t,r,b,l
+```{r}
+pardep_plot_mods3o = function(data, x_var) {
+     ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
+                geom_smooth(span = 0.5, se = FALSE) + # choose span? 
+                scale_color_manual(values = c("blue","red", "orange")) +
+                labs(y = "Fitted function",
+                     x = x_var) +
+                theme_bw(base_size = 12) +
+                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
+                theme(axis.text.x = element_text(size = 10, color = "black"),
+                      axis.text.y = element_text(size = 10, color = "black"),
+                      panel.border = element_rect(color = "black", size = 1.25),
+                      panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
+                      legend.position = "none") +
+                scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
+                #scale_x_continuous(labels = comma) +
+                #ylim(-1.55, 1.55) +
+                geom_hline(yintercept=0)+
+                scale_y_continuous(limits=c(-2.0,2.0), breaks=c(-2,-1,0,1,2))
+}
+
+pardep_plot_mods3o(data = pred_mods3o[[1]], x_var = x_names3[[1]])
+```
+
+
+
+
+## Loop through the models and the x variable names
+    simultaneously with map2()
+```{r}
+all_mod_plots3o = map2(pred_mods3o, x_names3, pardep_plot_mods3o)
+all_mod_plots3o
 ```
 
 
