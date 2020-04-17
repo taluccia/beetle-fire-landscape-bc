@@ -189,6 +189,31 @@ legend.manuscript <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, lin
 legend.manuscript
 ```
 
+## Legend Poster
+```{r}
+legend.poster <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
+        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
+        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE)) +
+        scale_linetype_manual(values = c("solid", "longdash", "dotdash"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE), guides(linetype = guide_legend(override.aes = list(size = 2)))) +
+        labs(y = "Fitted Function",
+             x = x_names4[[1]]) +
+        theme_bw(base_size = 14) +
+        theme(axis.text.x = element_text(size = 14, color = "black"),
+              axis.text.y = element_text(size = 14, color = "black"),
+              panel.border = element_rect(color = "black", size = 1.25),
+              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
+              legend.position = "right",
+              legend.title = element_text(size = 24, color = "black"),
+              legend.text = element_text(size = 20, color = "black")) +
+        
+        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
+        #scale_x_continuous(labels = comma) +
+        #ylim(-1.55, 1.55) +
+        geom_hline(yintercept=0)
+legend.poster
+```
+
+
 
 ### Plotting function ----
 Note: plot.margin - t,r,b,l
@@ -527,347 +552,13 @@ ggsave("../figures/2020-01-04_partialplots_legendright-outbreak.tiff", plot = gr
 ```
 
 
-# Poster figure
-
-## Four Variable Model
-
-### Make list of models and variables
-Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
-```{r}
-mods4 = list(Hi_4var = brt.model1, Mod_4var = brt.model2, Full_4var = brt.model6)
-vars4 = c("dndmi", "elevation", "fwi", "ndviprefire")
-names(vars4) = vars4
-vars4
-```
-
-Nicer variable names for x axis labels Must be in same order as vars
-```{r}
-x_names4 = c("Outbreak severity (dNDMI)", "Elevation (m)", "Fire weather index", "Prefire vegetation (NDVI)")
-```
-
-## Predicted dataset 
-Use nested loops for each variable and then each model within each variable
-
- For outer loop use map() or lapply()
- For the inner loop use imap_dfr() to use models and model names and bind together
-
- Work out approach with a single variable
- Goal is to get a dataset with predictions from all models stacked together for one x variable
-### Loop throughy single varible
-```{r}
-pred_test4 = map(vars4[[1]], function(variable) {
-     imap_dfr(mods4, function(Model, mod.name) {
-          preddat = plot.gbm(Model, i.var = variable, return.grid = TRUE)
-          preddat$center_y = scale(preddat$y, scale = FALSE)
-          preddat$x = preddat[, 1]
-          preddat$Model = mod.name
-          preddat
-     })
-})
-
-pred_test4
-```
-
-
-
-### Loop through all Varaibles 
-If that worked, loop through all variables
-```{r}
-pred_mods4 = map(vars4, function(variable) {
-     imap_dfr(mods4, function(model, mod.name) {
-          preddat = plot.gbm(model, i.var = variable, return.grid = TRUE)
-          preddat$center_y = scale(preddat$y, scale = FALSE)
-          preddat$x = preddat[, 1]
-          preddat$model = mod.name
-          preddat
-     })
-})
-```
-
-## Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
-```{r}
-range(bind_rows(pred_mods4)$center_y)
-```
-
-# Plot with improved x axis names ----
-```{r}
-model_id <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
-        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        labs(y = "Fitted Function",
-             x = x_names4[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 14, color = "black"),
-              axis.text.y = element_text(size = 14, color = "black"),
-              panel.border = element_rect(color = "black", size = 1.25),
-              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-              legend.position = "bottom",
-              legend.title = element_text(size = 14),
-              legend.text = element_text(size = 14)) +
-        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-        #scale_x_continuous(labels = comma) +
-        #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.75,0,0.5,1,1.5))
-model_id
-```
-Leaving legend to indicate multiple models plotted.
-Remove legend in subsequent step but save this one for cowplot merger below.
-## Legend Manuscript
-```{r}
-legend.manuscript <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
-        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "dotdash"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE), guides(linetype = guide_legend(override.aes = list(size = 2)))) +
-        labs(y = "Fitted Function",
-             x = x_names4[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 11, color = "black"),
-              axis.text.y = element_text(size = 11, color = "black"),
-              panel.border = element_rect(color = "black", size = 1.25),
-              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-              legend.position = "right",
-              legend.title = element_text(size = 11, color = "black"),
-              legend.text = element_text(size = 11, color = "black")) +
-        
-        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-        #scale_x_continuous(labels = comma) +
-        #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)
-legend.manuscript
-```
-
-## Legend Poster
-```{r}
-legend.poster <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
-        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "dotdash"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE), guides(linetype = guide_legend(override.aes = list(size = 2)))) +
-        labs(y = "Fitted Function",
-             x = x_names4[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 14, color = "black"),
-              axis.text.y = element_text(size = 14, color = "black"),
-              panel.border = element_rect(color = "black", size = 1.25),
-              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-              legend.position = "right",
-              legend.title = element_text(size = 24, color = "black"),
-              legend.text = element_text(size = 20, color = "black")) +
-        
-        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-        #scale_x_continuous(labels = comma) +
-        #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)
-legend.poster
-```
-
-
-
-
-### Plotting function ----
-note plot.margin - t,r,b,l
-```{r}
-pardep_plot_mods4 = function(data, x_var) {
-     ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
-                geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-                scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted function",
-                     x = x_var) +
-                theme_bw(base_size = 12) +
-                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
-                theme(axis.text.x = element_text(size = 12, color = "black"),
-                      axis.text.y = element_text(size = 12, color = "black"),
-                      axis.title.x = element_text(size=16),
-                      axis.title.y = element_text(size=16),
-                      panel.border = element_rect(color = "black", size = 1.25),
-                      panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-                      legend.position = "none") +
-                scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-                #scale_x_continuous(labels = comma) +
-                #ylim(-1.55, 1.55) +
-                geom_hline(yintercept=0)+
-                scale_y_continuous(limits=c(-2,2), breaks=c(-2,-1,0,1,2))
-}
-
-pardep_plot_mods4(data = pred_mods4[[1]], x_var = x_names4[[1]])
-```
-
-
-
-
-# Loop through the models and the x variable names
-    simultaneously with map2()
-```{r}
-all_mod_plots4 = map2(pred_mods4, x_names4, pardep_plot_mods4)
-all_mod_plots4
-```
-
-
-
-```{r}
-grid1 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi, labels = c("a", "b", "C", "d"), ncol = 2)
-
-grid1
-```
-```{r fig.height=5, fig.width=6}
-cowplot::plot_grid(grid1, legend, ncol=1, rel_widths = c(1, .1), rel_heights = c(1, .05))  
-```
-
-
-
-# Three Variable Model
-## Make list of models and variables
-Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
-```{r}
-mods3 = list(Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5)
-vars3 = c("elevation", "fwi", "ndviprefire")
-names(vars3) = vars3
-vars3
-```
-
-Nicer variable names for x axis labels Must be in same order as vars
-```{r}
-x_names3 = c("Elevation (m)", "Fire weather index", "Prefire vegetation (NDVI)")
-```
-
-
-## Use nested loops for each variable and then each model within each variable
-
- For outer loop use map() or lapply()
- For the inner loop use imap_dfr() to use models and model names and bind together
-
- Work out approach with a single variable
- Goal is to get a dataset with predictions from all models stacked together for one x variable
-
-```{r}
-pred_test3 = map(vars3[[1]], function(variable) {
-     imap_dfr(mods3, function(Model, mod.name) {
-          preddat = plot.gbm(Model, i.var = variable, return.grid = TRUE)
-          preddat$center_y = scale(preddat$y, scale = FALSE)
-          preddat$x = preddat[, 1]
-          preddat$Model = mod.name
-          preddat
-     })
-})
-
-pred_test3
-```
-
-
-
-## If that worked, loop through all variables
-```{r}
-pred_mods3 = map(vars3, function(variable) {
-     imap_dfr(mods3, function(model, mod.name) {
-          preddat = plot.gbm(model, i.var = variable, return.grid = TRUE)
-          preddat$center_y = scale(preddat$y, scale = FALSE)
-          preddat$x = preddat[, 1]
-          preddat$model = mod.name
-          preddat
-     })
-})
-```
-
-## Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
-```{r}
-range(bind_rows(pred_mods3)$center_y)
-```
-
-# Plot with improved x axis names ----
-```{r}
-model_id <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
-        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        labs(y = "Fitted Function",
-             x = x_names3[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 14, color = "black"),
-              axis.text.y = element_text(size = 14, color = "black"),
-              panel.border = element_rect(color = "black", size = 1.25),
-              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-              legend.position = "bottom",
-              legend.title = element_text(size = 14),
-              legend.text = element_text(size = 14)) +
-        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-        #scale_x_continuous(labels = comma) +
-        #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.5,0,0.5,1,1.5))
-model_id
-```
-Leaving legend to indicate multiple models plotted.
-Remove legend in subsequent step but save this one for cowplot merger below.
-```{r}
-legend.plot3 <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
-        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", labels=c("Full", "High", "Moderate"), guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "dotdash"), name = "Fire weather", labels=c("Full", "High", "Moderate"), guide = guide_legend(reverse=TRUE), guides(linetype = guide_legend(override.aes = list(size = 2)))) +
-        labs(y = "Fitted Function",
-             x = x_names3[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 14, color = "black"),
-              axis.text.y = element_text(size = 14, color = "black"),
-              panel.border = element_rect(color = "black", size = 1.25),
-              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-              legend.position = "bottom",
-              legend.title = element_text(size = 14),
-              legend.text = element_text(size = 14)) +
-        
-        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-        #scale_x_continuous(labels = comma) +
-        #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.5,0,0.5,1,1.5))
-legend.plot3
-```
-
-
-
-
-### Plotting function ----
-note plot.margin - t,r,b,l
-```{r}
-pardep_plot_mods3 = function(data, x_var) {
-     ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
-                geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-                scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted function",
-                     x = x_var) +
-                theme_bw(base_size = 12) +
-                theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
-                theme(axis.text.x = element_text(size = 12, color = "black"),
-                      axis.text.y = element_text(size = 12, color = "black"),
-                      axis.title.x = element_text(size=16),
-                      axis.title.y = element_text(size=16),
-                      panel.border = element_rect(color = "black", size = 1.25),
-                      panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-                      legend.position = "none") +
-                scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-                #scale_x_continuous(labels = comma) +
-                #ylim(-1.55, 1.55) +
-                geom_hline(yintercept=0)+
-                scale_y_continuous(limits=c(-2.0,2.0), breaks=c(-2,-1,0,1,2))
-}
-
-pardep_plot_mods3(data = pred_mods3[[1]], x_var = x_names3[[1]])
-```
-
-
-
-
-# Loop through the models and the x variable names
-    simultaneously with map2()
-```{r}
-all_mod_plots3 = map2(pred_mods3, x_names3, pardep_plot_mods3)
-all_mod_plots3
-```
 
 
 
 
 
+
+# Poster Figure
 
 ## Legend 
 
@@ -877,8 +568,7 @@ legend4 <- get_legend(legend.plot4)
 ```
 
 
-
-## Figure for Poster
+## Panel Figure
 
 ```{r fig.height=7, fig.width=15}
 grid_all4 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi,  all_mod_plots3$ndviprefire, all_mod_plots3$fwi, all_mod_plots3$elevation,  legend4, nrow = 2) + 
