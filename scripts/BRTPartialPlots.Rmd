@@ -17,16 +17,8 @@ NOte: the y-axis of the BRT model are referred to as the fitted function, for a 
 
 setwd("K:/Papers/Meigs_Refugia2_LateSuccessionalForests/r_files_brt")   ### Change to wherever you put the code files sourced below
 
-## Set libraries
-```{r eval=FALSE, include=FALSE}
-.libPaths('C:/Users/atalucci/Documents/R/win-library/3.5')
-```
-
-
-
-
 # Load packages
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(gbm)
 library(dismo)
 library(purrr) # for looping
@@ -37,16 +29,24 @@ library(cowplot)
 ```
 
 # BRT Models
-brt.model1= FWI HI; 4var
-brt.model2= FWI MOD; 4var
-brt.model3= FWI HI; 3var
-brt.model4= FWI MOD; 3var
-brt.model5= FULL FWI; 3var
-brt.model6= FULL FWI; 4var
+
+Model         | FWI        | Variables
+------------- | ---------- | -------------------------------------------
+brt.model1    | FWI HI     | Prefire, outbreak, weather, topography
+brt.model2    | FWI MOD    | Prefire, outbreak, weather, topography
+brt.model3    | FWI HI     | Prefire, weather, topography
+brt.model4    | FWI MOD    | Prefire, weather, topography
+brt.model5    | Full FWI   | Prefire, weather, topography
+brt.model6    | Full FWI   | Prefire, outbreak, weather, topography
+brt.model7    | FWI HI     | Outbreak, weather, topography
+brt.model8    | FWI Mod    | Outbreak, weather, topography
+brt.model9    | Full FWI   | Outbreak, weather, topography
+
+
 
 
 # Load BRT Models 
-Prior BRT model runs are saved as .Rda files in the working directory
+Load BRT models that are saved during the model as .Rda files in the working directory. Models are assembled and run in the script 'BRTAnalyses'
 ```{r}
 load(file = "../output/finalmodels/BRTF1_model_data_output.rda")
 brt.model1 = brt.modelF1
@@ -74,9 +74,6 @@ brt.model8 = brt.modelF8
 
 load(file = "../output/finalmodels/BRTF9_model_data_output.rda")
 brt.model9 = brt.modelF9
-
-
-
 ```
 
 
@@ -123,8 +120,6 @@ pred_test4 = map(vars4[[1]], function(variable) {
 pred_test4
 ```
 
-
-
 ### Loop through all Varaibles 
 If that worked, loop through all variables
 ```{r}
@@ -168,8 +163,9 @@ model_id <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = m
 model_id
 ```
 Leaving legend to indicate multiple models plotted.
-Remove legend in subsequent step but save this one for cowplot merger below.
+
 ## Legend Manuscript
+Assemble ledgend for final figure
 ```{r}
 legend.manuscript <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
@@ -194,12 +190,11 @@ legend.manuscript
 ```
 
 
-
-
-
-
 ### Plotting function ----
-note plot.margin - t,r,b,l
+Note: plot.margin - t,r,b,l
+
+Adjust plot margins for compiling a panel figure with cowplot.
+
 ```{r}
 pardep_plot_mods4 = function(data, x_var) {
      ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
@@ -224,9 +219,6 @@ pardep_plot_mods4 = function(data, x_var) {
 pardep_plot_mods4(data = pred_mods4[[1]], x_var = x_names4[[1]])
 ```
 
-
-
-
 # Loop through the models and the x variable names
     simultaneously with map2()
 ```{r}
@@ -236,15 +228,7 @@ all_mod_plots4
 
 
 
-
-
-```{r}
-
-legend <- get_legend(legend.manuscript) 
-
-```
-
-# Three Variable Model
+# Three Variable Model w/ Prefire
 ## Make list of models and variables
 Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
 ```{r}
@@ -326,11 +310,6 @@ model_id <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype = m
 model_id
 ```
 Leaving legend to indicate multiple models plotted.
-Remove legend in subsequent step but save this one for cowplot merger below.
-
-
-
-
 
 ### Plotting function ----
 note plot.margin - t,r,b,l
@@ -359,8 +338,6 @@ pardep_plot_mods3(data = pred_mods3[[1]], x_var = x_names3[[1]])
 ```
 
 
-
-
 ## Loop through the models and the x variable names
     simultaneously with map2()
 ```{r}
@@ -369,7 +346,7 @@ all_mod_plots3
 ```
 
 
-# Three Variable Model - OUtbreak Severity, Elelvatio, Fire Weather
+# Three Variable Model - Outbreak Severity, Elelvatio, Fire Weather
 ## Make list of models and variables
 Hi_3var = brt.model7, Mod_3var = brt.model8, Full_3var = brt.model9,
 ```{r}
@@ -406,7 +383,6 @@ pred_test3o = map(ovars[[1]], function(variable) {
 
 pred_test3o
 ```
-
 
 
 ## If that worked, loop through all variables
@@ -451,7 +427,6 @@ model_id <- ggplot(data = pred_mods3o[[1]], aes(x = x, y = center_y, linetype = 
 model_id
 ```
 Leaving legend to indicate multiple models plotted.
-Remove legend in subsequent step but save this one for cowplot merger below.
 
 ### Plotting function ----
 note plot.margin - t,r,b,l
@@ -730,14 +705,6 @@ all_mod_plots4
 
 
 
-
-
-```{r}
-
-legend <- get_legend(legend.plot4) 
-
-```
-
 ```{r}
 grid1 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi, labels = c("a", "b", "C", "d"), ncol = 2)
 
@@ -899,136 +866,16 @@ all_mod_plots3
 
 
 
-# Assemble Figures
-Use Cowplot to grid plots, add legend, and annotate figure
-
-## Bottom Legend
-```{r}
-legend <- get_legend(legend.plot3) 
-```
-
-### Grided Plots for 3 variable models
-```{r}
-grid3 = cowplot::plot_grid(all_mod_plots3$ndviprefire, all_mod_plots3$fwi, all_mod_plots3$elevation, labels = c("a", "b", "C"), ncol = 2)
-grid3
-```
-```{r fig.height=5, fig.width=6}
-cowplot::plot_grid(grid3, legend, ncol=1, rel_widths = c(1, .1), rel_heights = c(1, .05))  
-```
-
-### Full figure with 7 plots 
-```{r fig.height=7, fig.width=6}
-grid_all = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, labels = c("a", "b", "c", "d", "e", "f", "g"), ncol = 2) + 
-   draw_label("Three variable models", x = .8, y = .992, size = 12) + 
-   draw_label("Four variable models", x = .3, y = .992, size = 12) + 
-   draw_label("dead/sparse", x = .21, y = .84, size = 10) +
-   draw_label("live/dense", x = .41, y = .84, size = 10) +
-   draw_label("dead/sparse", x = .7, y = .84, size = 10) +
-   draw_label("live/dense", x = .9, y = .84, size = 10) +
-   draw_label("moderate", x = .25, y = .59, size = 10) +
-   draw_label("extreme", x = .40, y = .59, size = 10) +
-   draw_label("moderate", x = .75, y = .59, size = 10) +
-   draw_label("extreme", x = .89, y = .59, size = 10) +
-   draw_label("low", x = .14, y = .34, size = 10) +
-   draw_label("high", x = .44, y = .34, size = 10) +
-   draw_label("low", x = .64, y = .34, size = 10) +
-   draw_label("high", x = .94, y = .34, size = 10) +
-   draw_label("no\nmortality", x = .2, y = .1, size = 10) +
-   draw_label("high\nmortality", x = .38, y = .1, size = 10)  
-
-grid_all
-```
-### Full figure with 7 plots and legend
-```{r fig.height=7, fig.width=6}
-( grid_final2 = cowplot::plot_grid(grid_all, legend, ncol=1, rel_heights = c(1, .06))  )
-```
-
-```{r fig.height=7, fig.width=6}
-grid_all2 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, labels = c("a", "b", "c", "d", "e", "f", "g"), ncol = 2) + 
-   draw_label("dead/sparse", x = .21, y = .84, size = 10) +
-   draw_label("live/dense", x = .41, y = .84, size = 10) +
-   draw_label("dead/sparse", x = .7, y = .84, size = 10) +
-   draw_label("live/dense", x = .9, y = .84, size = 10) +
-   draw_label("moderate", x = .25, y = .59, size = 10) +
-   draw_label("extreme", x = .40, y = .59, size = 10) +
-   draw_label("moderate", x = .75, y = .59, size = 10) +
-   draw_label("extreme", x = .89, y = .59, size = 10) +
-   draw_label("low", x = .14, y = .34, size = 10) +
-   draw_label("high", x = .44, y = .34, size = 10) +
-   draw_label("low", x = .64, y = .34, size = 10) +
-   draw_label("high", x = .94, y = .34, size = 10) +
-   draw_label("no\nmortality", x = .21, y = .1, size = 10) +
-   draw_label("high\nmortality", x = .38, y = .1, size = 10)  
-
-grid_all2
-```
-
-##Headers
-```{r}
-col1 = ggdraw() + draw_label('Four-variable models', size = 12, fontface = 'bold') 
-col2 = ggdraw() + draw_label('Three-variable models', size = 12, fontface = 'bold') 
-header = cowplot::plot_grid(col1, col2, ncol=2)
-header
-```
 
 
-```{r}
-ocol1 = ggdraw() + draw_label('Outbreak severity included', size = 12, fontface = 'bold') 
-ocol2 = ggdraw() + draw_label('Outbreak severity excluded', size = 12, fontface = 'bold') 
-oheader2 = cowplot::plot_grid(ocol1, ocol2, ncol=2)
-oheader2
-```
 
-```{r fig.height=7, fig.width=6}
-( grid_final1 = cowplot::plot_grid(header, grid_all2, legend, ncol=1, rel_heights = c(0.04, 1, .07))  )
-```
+## Legend 
 
 
-```{r eval=FALSE, include=FALSE}
-ggsave("../figures/2019-09-20_partialplots_legendBottom.tiff", plot = grid_final1 , width = 6, height = 7, units = c("in"), dpi=600 )
-```
-
-## Legend on right
 ```{r}
 legend4 <- get_legend(legend.plot4) 
 ```
 
-### Full Figure
-labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)", "(g)"), label_size = 10, label_fontface = 'plain', hjust = -4.5, 
-```{r fig.height=7, fig.width=6}
-grid_all3 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, legend4, ncol = 2) + 
-   draw_label("dead/sparse", x = .21, y = .84, size = 10) +
-   draw_label("live/dense", x = .41, y = .84, size = 10) +
-   draw_label("dead/sparse", x = .7, y = .84, size = 10) +
-   draw_label("live/dense", x = .9, y = .84, size = 10) +
-   draw_label("moderate", x = .25, y = .59, size = 10) +
-   draw_label("extreme", x = .40, y = .59, size = 10) +
-   draw_label("moderate", x = .75, y = .59, size = 10) +
-   draw_label("extreme", x = .89, y = .59, size = 10) +
-   draw_label("low", x = .14, y = .34, size = 10) +
-   draw_label("high", x = .44, y = .34, size = 10) +
-   draw_label("low", x = .64, y = .34, size = 10) +
-   draw_label("high", x = .94, y = .34, size = 10) +
-   draw_label("no\nmortality", x = .21, y = .1, size = 10) +
-   draw_label("high\nmortality", x = .38, y = .1, size = 10) +
-   draw_label("(a)", x = .13, y = .98, size = 10) +
-   draw_label("(b)", x = .63, y = .98, size = 10) +
-   draw_label("(c)", x = .13, y = .73, size = 10) +
-   draw_label("(d)", x = .63, y = .73, size = 10) +
-   draw_label("(e)", x = .13, y = .48, size = 10) +
-   draw_label("(f)", x = .63, y = .48, size = 10) +
-   draw_label("(g)", x = .13, y = .23, size = 10)
-grid_all3
-```
-
-### Full figure with legend on Right
-```{r fig.height=7, fig.width=6}
-( grid_final2 = cowplot::plot_grid(oheader2, grid_all3, ncol=1, rel_heights = c(0.04, 1))  )
-```
-
-```{r eval=FALSE, include=FALSE}
-ggsave("../figures/2019-09-24_partialplots_legendright.tiff", plot = grid_final2 , width = 6, height = 7, units = c("in"), dpi=600 )
-```
 
 
 ## Figure for Poster
@@ -1066,6 +913,7 @@ row2 = ggdraw() + draw_label('Outbreak severity\nexcluded', size = 20, fontface 
 header2 = cowplot::plot_grid(row1, row2, nrow=2)
 header2
 ```
+
 ### Full figure with legend on Right
 ```{r fig.height=7, fig.width=15}
 ( grid_final4 = cowplot::plot_grid(header2, grid_all4, nrow=1, rel_widths = c(0.04, 1))  )
