@@ -10,7 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Overview
-# September 2019: Extra fun with partial plots.  This script is designed to use brt model runs saved as .Rdas.
+Script adapted from Areil Muldoon and Garrett Meigs
+
+September 2019: Extra fun with partial plots.  This script is designed to use brt model runs saved as .Rdas.
+
 # Goal: Overlay partial-dependence plots from multiple models.
 
 NOte: the y-axis of the BRT model are referred to as the fitted function, for a binomial distribtuion this fitted function is the loggit scale. To convert back to a probability we can use the plogis() function. We will leave the y-axix on the logit scale but also add a line for a high probability
@@ -30,17 +33,17 @@ library(cowplot)
 
 # BRT Models
 
-Model         | FWI        | Variables
-------------- | ---------- | -------------------------------------------
-brt.model1    | FWI HI     | Prefire, outbreak, weather, topography
-brt.model2    | FWI MOD    | Prefire, outbreak, weather, topography
-brt.model3    | FWI HI     | Prefire, weather, topography
-brt.model4    | FWI MOD    | Prefire, weather, topography
-brt.model5    | Full FWI   | Prefire, weather, topography
-brt.model6    | Full FWI   | Prefire, outbreak, weather, topography
-brt.model7    | FWI HI     | Outbreak, weather, topography
-brt.model8    | FWI Mod    | Outbreak, weather, topography
-brt.model9    | Full FWI   | Outbreak, weather, topography
+Model         | Name        | FWI        | Variables
+------------- | ----------- | ---------- | -------------------------------------------
+brt.model1    | 4var-hi     | FWI HI     | Prefire, outbreak, weather, topography
+brt.model2    | 4var-mod    | FWI MOD    | Prefire, outbreak, weather, topography
+brt.model3    | 3var-hi     | FWI HI     | Prefire, weather, topography
+brt.model4    | 3var-mod    | FWI MOD    | Prefire, weather, topography
+brt.model5    | 3var-full   | Full FWI   | Prefire, weather, topography
+brt.model6    | 4var-full   | Full FWI   | Prefire, outbreak, weather, topography
+brt.model7    | out-hi      | FWI HI     | Outbreak, weather, topography
+brt.model8    | out-mod     | FWI Mod    | Outbreak, weather, topography
+brt.model9    | out-full    | Full FWI   | Outbreak, weather, topography
 
 
 
@@ -82,8 +85,7 @@ brt.model9 = brt.modelF9
 # Manuscript figure
 
 ## Four Variable Model
-
-### Make list of models and variables
+Make list of models and variables
 Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
 ```{r}
 mods4 = list(Hi_4var = brt.model1, Mod_4var = brt.model2, Full_4var = brt.model6)
@@ -97,7 +99,7 @@ Nicer variable names for x axis labels Must be in same order as vars
 x_names4 = c("Outbreak severity (dNDMI)", "Elevation (m)", "Fire weather index", "Prefire vegetation (NDVI)")
 ```
 
-## Predicted dataset 
+### Predicted dataset 
 Use nested loops for each variable and then each model within each variable
 
  For outer loop use map() or lapply()
@@ -105,6 +107,7 @@ Use nested loops for each variable and then each model within each variable
 
  Work out approach with a single variable
  Goal is to get a dataset with predictions from all models stacked together for one x variable
+
 ### Loop throughy single varible
 ```{r}
 pred_test4 = map(vars4[[1]], function(variable) {
@@ -134,12 +137,12 @@ pred_mods4 = map(vars4, function(variable) {
 })
 ```
 
-## Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
+Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
 ```{r}
 range(bind_rows(pred_mods4)$center_y)
 ```
 
-# Plot with improved x axis names ----
+### Plot with improved x axis names ----
 ```{r}
 model_id <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
@@ -164,7 +167,7 @@ model_id
 ```
 Leaving legend to indicate multiple models plotted.
 
-## Legend Manuscript
+### Legends 
 Assemble ledgend for final figure
 ```{r}
 legend.manuscript <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
@@ -189,7 +192,7 @@ legend.manuscript <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, lin
 legend.manuscript
 ```
 
-## Legend Poster
+Legend for AGU poster
 ```{r}
 legend.poster <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
@@ -198,13 +201,13 @@ legend.poster <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetyp
         labs(y = "Fitted Function",
              x = x_names4[[1]]) +
         theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 14, color = "black"),
-              axis.text.y = element_text(size = 14, color = "black"),
+        theme(axis.text.x = element_text(size = 11, color = "black"),
+              axis.text.y = element_text(size = 11, color = "black"),
               panel.border = element_rect(color = "black", size = 1.25),
               panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
               legend.position = "right",
-              legend.title = element_text(size = 24, color = "black"),
-              legend.text = element_text(size = 20, color = "black")) +
+              legend.title = element_text(size = 14, color = "black"),
+              legend.text = element_text(size = 14, color = "black")) +
         
         scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
         #scale_x_continuous(labels = comma) +
@@ -212,8 +215,6 @@ legend.poster <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetyp
         geom_hline(yintercept=0)
 legend.poster
 ```
-
-
 
 ### Plotting function ----
 Note: plot.margin - t,r,b,l
@@ -244,7 +245,7 @@ pardep_plot_mods4 = function(data, x_var) {
 pardep_plot_mods4(data = pred_mods4[[1]], x_var = x_names4[[1]])
 ```
 
-# Loop through the models and the x variable names
+### Loop through the models and the x variable names
     simultaneously with map2()
 ```{r}
 all_mod_plots4 = map2(pred_mods4, x_names4, pardep_plot_mods4)
@@ -253,9 +254,11 @@ all_mod_plots4
 
 
 
-# Three Variable Model w/ Prefire
-## Make list of models and variables
+## Three Variable Model w/ Prefire
+
+Make list of models and variables
 Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
+
 ```{r}
 mods3 = list(Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5)
 vars3 = c("elevation", "fwi", "ndviprefire")
@@ -269,7 +272,7 @@ x_names3 = c("Elevation (m)", "Fire weather index", "Prefire vegetation (NDVI)")
 ```
 
 
-## Use nested loops for each variable and then each model within each variable
+### Use nested loops for each variable and then each model within each variable
 
  For outer loop use map() or lapply()
  For the inner loop use imap_dfr() to use models and model names and bind together
@@ -293,7 +296,8 @@ pred_test3
 
 
 
-## If that worked, loop through all variables
+### Loop through all variables
+
 ```{r}
 pred_mods3 = map(vars3, function(variable) {
      imap_dfr(mods3, function(model, mod.name) {
@@ -306,12 +310,13 @@ pred_mods3 = map(vars3, function(variable) {
 })
 ```
 
-## Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
+Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
 ```{r}
 range(bind_rows(pred_mods3)$center_y)
 ```
 
-# Plot with improved x axis names ----
+### Plot with improved x axis names ----
+
 ```{r}
 model_id <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
@@ -363,7 +368,7 @@ pardep_plot_mods3(data = pred_mods3[[1]], x_var = x_names3[[1]])
 ```
 
 
-## Loop through the models and the x variable names
+### Loop through the models and the x variable names
     simultaneously with map2()
 ```{r}
 all_mod_plots3 = map2(pred_mods3, x_names3, pardep_plot_mods3)
@@ -372,7 +377,7 @@ all_mod_plots3
 
 
 # Three Variable Model - Outbreak Severity, Elelvatio, Fire Weather
-## Make list of models and variables
+Make list of models and variables
 Hi_3var = brt.model7, Mod_3var = brt.model8, Full_3var = brt.model9,
 ```{r}
 mods3o = list(Hi_ovar = brt.model7, Mod_ovar = brt.model8, Full_ovar = brt.model9)
@@ -387,7 +392,7 @@ x_names3 = c("Elevation (m)", "Fire weather index", "Outbreak Severity (NDMI)")
 ```
 
 
-## Use nested loops for each variable and then each model within each variable
+### Use nested loops for each variable and then each model within each variable
 
  For outer loop use map() or lapply()
  For the inner loop use imap_dfr() to use models and model names and bind together
@@ -410,7 +415,7 @@ pred_test3o
 ```
 
 
-## If that worked, loop through all variables
+### Loop through all variables
 ```{r}
 pred_mods3o = map(ovars, function(variable) {
      imap_dfr(mods3o, function(model, mod.name) {
@@ -423,12 +428,13 @@ pred_mods3o = map(ovars, function(variable) {
 })
 ```
 
-## Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
+Figure out plot limits (if want all the same) by binding all groups together and calculating min and max center_y
 ```{r}
 range(bind_rows(pred_mods3o)$center_y)
 ```
 
-# Plot with improved x axis names ----
+### Plot with improved x axis names ----
+
 ```{r}
 model_id <- ggplot(data = pred_mods3o[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
@@ -482,7 +488,7 @@ pardep_plot_mods3o(data = pred_mods3o[[1]], x_var = x_names3[[1]])
 
 
 
-## Loop through the models and the x variable names
+### Loop through the models and the x variable names
     simultaneously with map2()
 ```{r}
 all_mod_plots3o = map2(pred_mods3o, x_names3, pardep_plot_mods3o)
@@ -490,9 +496,9 @@ all_mod_plots3o
 ```
 
 
-### Full figure with 7 plots and legend
+# Panel Figures
 
-#### Headers and Legend
+## Headers and Legend
 
 ```{r}
 col1 = ggdraw() + draw_label('Four-variable models', size = 12, fontface = 'bold') 
@@ -510,11 +516,16 @@ oheader2 = cowplot::plot_grid(ocol1, ocol2, ncol=2)
 oheader2
 ```
 
+## Legends
+
 ```{r}
 legendman <- get_legend(legend.manuscript) 
 ```
+```{r}
+legend4 <- get_legend(legend.poster) 
+```
 
-### Full Figure
+## Manuscript Figure
 
 ```{r fig.height=7, fig.width=6}
 grid_all2 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, legendman, ncol = 2) + 
@@ -542,7 +553,6 @@ grid_all2 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndvipr
 grid_all2
 ```
 
-### Full figure with legend on Right
 ```{r fig.height=7, fig.width=6}
 ( grid_final2 = cowplot::plot_grid(oheader2, grid_all2, ncol=1, rel_heights = c(0.04, 1))  )
 ```
@@ -551,24 +561,31 @@ grid_all2
 ggsave("../figures/2020-01-04_partialplots_legendright-outbreak.tiff", plot = grid_final2 , width = 6, height = 7, units = c("in"), dpi=600 )
 ```
 
-
-
-
-
-
-
-
-# Poster Figure
-
-## Legend 
-
-
-```{r}
-legend4 <- get_legend(legend.plot4) 
+all_mod_plots3o
+### Prefire Vegetation Excluded
+```{r fig.height=7, fig.width=3}
+grid_PVexclude = cowplot::plot_grid(all_mod_plots3o$dndmi, all_mod_plots3o$fwi, all_mod_plots3o$elevation, legendman, ncol = 1) + 
+   draw_label("no\nmortality", x = .43, y = .84, size = 10) +
+   draw_label("high\nmortality", x = .83, y = .84, size = 10) +
+   draw_label("moderate", x = .32, y = .59, size = 10) +
+   draw_label("extreme", x = .83, y = .59, size = 10) +
+   draw_label("low", x = .3, y = .34, size = 10) +
+   draw_label("high", x = .84, y = .34, size = 10) +
+   draw_label("(a)", x = .25, y = .98, size = 10) +
+   draw_label("(b)", x = .25, y = .73, size = 10) +
+   draw_label("(c)", x = .25, y = .48, size = 10) 
+grid_PVexclude
 ```
 
 
-## Panel Figure
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figures/2020-04-17_partialplots_outbreakONLY.tiff", plot = grid_PVexclude , width = 3, height = 7, units = c("in"), dpi=600 )
+```
+
+
+
+## Poster Figure
 
 ```{r fig.height=7, fig.width=15}
 grid_all4 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi,  all_mod_plots3$ndviprefire, all_mod_plots3$fwi, all_mod_plots3$elevation,  legend4, nrow = 2) + 
@@ -604,7 +621,6 @@ header2 = cowplot::plot_grid(row1, row2, nrow=2)
 header2
 ```
 
-### Full figure with legend on Right
 ```{r fig.height=7, fig.width=15}
 ( grid_final4 = cowplot::plot_grid(header2, grid_all4, nrow=1, rel_widths = c(0.04, 1))  )
 ```
