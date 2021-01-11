@@ -84,7 +84,7 @@ brt.model9 = brt.modelF9
 
 # Manuscript figure
 
-## Four Variable Model
+## Group 1 models 
 Make list of models and variables
 Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
 ```{r}
@@ -96,7 +96,7 @@ vars4
 
 Nicer variable names for x axis labels Must be in same order as vars
 ```{r}
-x_names4 = c("Outbreak severity (dNDMI)", "Elevation (m)", "Fire weather index", "Prefire vegetation (NDVI)")
+x_names4 = c("dNDMI", "Elevation (m)", "FWI", "NDVI")
 ```
 
 ### Predicted dataset 
@@ -108,7 +108,7 @@ Use nested loops for each variable and then each model within each variable
  Work out approach with a single variable
  Goal is to get a dataset with predictions from all models stacked together for one x variable
 
-### Loop throughy single varible
+### Loop through single varible
 ```{r}
 pred_test4 = map(vars4[[1]], function(variable) {
      imap_dfr(mods4, function(Model, mod.name) {
@@ -167,53 +167,29 @@ model_id
 ```
 Leaving legend to indicate multiple models plotted.
 
-### Legends 
-Assemble ledgend for final figure
+### Figure Legend
 ```{r}
-legend.manuscript <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
+BC_leg = ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "dotdash"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE), guides(linetype = guide_legend(override.aes = list(size = 2)))) +
+        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=FALSE)) +
+        scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Burning conditions", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=FALSE)) +
         labs(y = "Fitted Function",
              x = x_names4[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 11, color = "black"),
-              axis.text.y = element_text(size = 11, color = "black"),
+        theme_bw(base_size = 12) +
+        theme(axis.text.x = element_text(size = 10, color = "black"),
+              axis.text.y = element_text(size = 10, color = "black"),
               panel.border = element_rect(color = "black", size = 1.25),
               panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
               legend.position = "right",
-              legend.title = element_text(size = 11, color = "black"),
-              legend.text = element_text(size = 11, color = "black")) +
-        
+              legend.title = element_text(size = 14),
+              legend.text = element_text(size = 14)) +
         scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
         #scale_x_continuous(labels = comma) +
         #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)
-legend.manuscript
-```
+        geom_hline(yintercept=0)+
+        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.75,0,0.5,1,1.5))
 
-Legend for AGU poster
-```{r}
-legend.poster <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
-        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
-        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE)) +
-        scale_linetype_manual(values = c("solid", "longdash", "dotdash"), name = "Burning conditions model", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=TRUE), guides(linetype = guide_legend(override.aes = list(size = 2)))) +
-        labs(y = "Fitted Function",
-             x = x_names4[[1]]) +
-        theme_bw(base_size = 14) +
-        theme(axis.text.x = element_text(size = 11, color = "black"),
-              axis.text.y = element_text(size = 11, color = "black"),
-              panel.border = element_rect(color = "black", size = 1.25),
-              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
-              legend.position = "right",
-              legend.title = element_text(size = 14, color = "black"),
-              legend.text = element_text(size = 14, color = "black")) +
-        
-        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
-        #scale_x_continuous(labels = comma) +
-        #ylim(-1.55, 1.55) +
-        geom_hline(yintercept=0)
-legend.poster
+BC_leg
 ```
 
 ### Plotting function ----
@@ -254,7 +230,7 @@ all_mod_plots4
 
 
 
-## Three Variable Model w/ Prefire
+## Group 2 models w/ Prefire
 
 Make list of models and variables
 Hi_3var = brt.model3, Mod_3var = brt.model4, Full_3var = brt.model5,
@@ -268,7 +244,7 @@ vars3
 
 Nicer variable names for x axis labels Must be in same order as vars
 ```{r}
-x_names3 = c("Elevation (m)", "Fire weather index", "Prefire vegetation (NDVI)")
+x_names3 = c("Elevation (m)", "FWI", "NDVI")
 ```
 
 
@@ -376,7 +352,7 @@ all_mod_plots3
 ```
 
 
-# Three Variable Model - Outbreak Severity, Elelvatio, Fire Weather
+## Group 3 Models - Outbreak Severity, Elelvatio, Fire Weather
 Make list of models and variables
 Hi_3var = brt.model7, Mod_3var = brt.model8, Full_3var = brt.model9,
 ```{r}
@@ -388,7 +364,7 @@ ovars
 
 Nicer variable names for x axis labels Must be in same order as vars
 ```{r}
-x_names3 = c("Elevation (m)", "Fire weather index", "Outbreak Severity (NDMI)")
+x_names3 = c("Elevation (m)", "FWI", "dNDMI")
 ```
 
 
@@ -501,86 +477,95 @@ all_mod_plots3o
 ## Headers and Legend
 
 ```{r}
-col1 = ggdraw() + draw_label('Four-variable models', size = 12, fontface = 'bold') 
-col2 = ggdraw() + draw_label('Three-variable models', size = 12, fontface = 'bold') 
-header = cowplot::plot_grid(col1, col2, ncol=2)
-header
-```
+grp1 = ggdraw() + draw_label('Group 1', size = 12, fontface = 'bold') 
+grp2 = ggdraw() + draw_label('Group 2', size = 12, fontface = 'bold')
+grp3 = ggdraw() + draw_label('Group 3', size = 12, fontface = 'bold')
 
-
-```{r}
-ocol1 = ggdraw() + draw_label('Outbreak severity included', size = 12, fontface = 'bold', hjust=0.35) 
-ocol2 = ggdraw() + draw_label('Outbreak severity excluded', size = 12, fontface = 'bold', hjust=0.35) 
-
-oheader2 = cowplot::plot_grid(ocol1, ocol2, ncol=2)
-oheader2
+header_groups = cowplot::plot_grid(grp1, grp2, grp3, ncol=3)
+header_groups
 ```
 
 ## Legends
 
 ```{r}
-legendman <- get_legend(legend.manuscript) 
-```
-```{r}
-legend4 <- get_legend(legend.poster) 
+legendman <- get_legend(BC_leg) 
 ```
 
-## Manuscript Figure
 
+## Manuscript Figure: Groups
+
+Order plots
+-- FWI
+-- Elevation
+-- NDVI
+-- dNDMI
+
+### Group 1
+```{r fig.height=7, fig.width=2}
+grp1 = cowplot::plot_grid( all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$ndviprefire,all_mod_plots4$dndmi, ncol = 1) +
+    draw_label("moderate", x = .47, y = .835, size = 9) +
+   draw_label("extreme", x = .83, y = .835, size = 9) +
+       draw_label("low", x = .38, y = .585, size = 9) +
+   draw_label("high", x = .84, y = .585, size = 9) +
+   draw_label("dead", x = .43, y = .335, size = 9) +
+   draw_label("live", x = .83, y = .335, size = 9) +
+   draw_label("low", x = .53, y = .085, size = 9) +
+   draw_label("high", x = .83, y = .085, size = 9) +
+
+   draw_label("(a)", x = .38, y = .98, size = 10) +
+   draw_label("(b)", x = .38, y = .73, size = 10) +
+   draw_label("(c)", x = .38, y = .48, size = 10) +
+    draw_label("(d)", x = .38, y = .23, size = 10) 
+
+grp1
+```
+
+### Group 2
+```{r fig.height=7, fig.width=2}
+grp2 = cowplot::plot_grid(all_mod_plots3$fwi, all_mod_plots3$elevation, all_mod_plots3$ndviprefire, legendman, ncol = 1) +
+    draw_label("moderate", x = .47, y = .835, size = 9) +
+   draw_label("extreme", x = .83, y = .835, size = 9) +
+       draw_label("low", x = .38, y = .585, size = 9) +
+   draw_label("high", x = .84, y = .585, size = 9) +
+   draw_label("dead", x = .43, y = .335, size = 9) +
+   draw_label("live", x = .83, y = .335, size = 9) +
+
+
+   draw_label("(e)", x = .38, y = .98, size = 10) +
+   draw_label("(f)", x = .38, y = .73, size = 10) +
+   draw_label("(g)", x = .38, y = .48, size = 10) 
+grp2
+```
+
+
+
+### Group 3
+```{r fig.height=7, fig.width=2}
+grp3 = cowplot::plot_grid( all_mod_plots3o$fwi, all_mod_plots3o$elevation, NULL, all_mod_plots3o$dndmi, ncol = 1) + 
+    draw_label("moderate", x = .47, y = .835, size = 9) +
+   draw_label("extreme", x = .83, y = .835, size = 9) +
+       draw_label("low", x = .38, y = .585, size = 9) +
+   draw_label("high", x = .84, y = .585, size = 9) +
+   draw_label("low", x = .53, y = .085, size = 9) +
+   draw_label("high", x = .83, y = .085, size = 9) +
+
+
+   draw_label("(h)", x = .38, y = .98, size = 10) +
+   draw_label("(i)", x = .38, y = .73, size = 10) +
+   draw_label("(j)", x = .38, y = .23, size = 10) 
+grp3
+```
+
+### Combine groups
 ```{r fig.height=7, fig.width=6}
-grid_all2 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots3$ndviprefire, all_mod_plots4$fwi, all_mod_plots3$fwi, all_mod_plots4$elevation, all_mod_plots3$elevation, all_mod_plots4$dndmi, legendman, ncol = 2) + 
-   draw_label("sparse/dead", x = .21, y = .835, size = 10) +
-   draw_label("dense/live", x = .41, y = .835, size = 10) +
-   draw_label("sparse/dead", x = .7, y = .835, size = 10) +
-   draw_label("dense/live", x = .9, y = .835, size = 10) +
-   draw_label("moderate", x = .25, y = .59, size = 10) +
-   draw_label("extreme", x = .40, y = .59, size = 10) +
-   draw_label("moderate", x = .75, y = .59, size = 10) +
-   draw_label("extreme", x = .89, y = .59, size = 10) +
-   draw_label("low", x = .14, y = .34, size = 10) +
-   draw_label("high", x = .44, y = .34, size = 10) +
-   draw_label("low", x = .64, y = .34, size = 10) +
-   draw_label("high", x = .94, y = .34, size = 10) +
-   draw_label("no\nmortality", x = .21, y = .1, size = 10) +
-   draw_label("high\nmortality", x = .38, y = .1, size = 10) +
-   draw_label("(a)", x = .13, y = .98, size = 10) +
-   draw_label("(b)", x = .63, y = .98, size = 10) +
-   draw_label("(c)", x = .13, y = .73, size = 10) +
-   draw_label("(d)", x = .63, y = .73, size = 10) +
-   draw_label("(e)", x = .13, y = .48, size = 10) +
-   draw_label("(f)", x = .63, y = .48, size = 10) +
-   draw_label("(g)", x = .13, y = .23, size = 10)
-grid_all2
+( grid_groups = cowplot::plot_grid(grp1, grp2, grp3, ncol=3) )
 ```
-
 ```{r fig.height=7, fig.width=6}
-( grid_final2 = cowplot::plot_grid(oheader2, grid_all2, ncol=1, rel_heights = c(0.04, 1))  )
+( grid_group_head = cowplot::plot_grid(header_groups, grid_groups, ncol=1, rel_heights = c(0.04, 1))  )
 ```
 
 ```{r eval=FALSE, include=FALSE}
-ggsave("../figures/2020-01-04_partialplots_legendright-outbreak.tiff", plot = grid_final2 , width = 6, height = 7, units = c("in"), dpi=600 )
-```
-
-all_mod_plots3o
-### Prefire Vegetation Excluded
-```{r fig.height=7, fig.width=3}
-grid_PVexclude = cowplot::plot_grid(all_mod_plots3o$dndmi, all_mod_plots3o$fwi, all_mod_plots3o$elevation, legendman, ncol = 1) + 
-   draw_label("no\nmortality", x = .43, y = .84, size = 10) +
-   draw_label("high\nmortality", x = .83, y = .84, size = 10) +
-   draw_label("moderate", x = .32, y = .59, size = 10) +
-   draw_label("extreme", x = .83, y = .59, size = 10) +
-   draw_label("low", x = .3, y = .34, size = 10) +
-   draw_label("high", x = .84, y = .34, size = 10) +
-   draw_label("(a)", x = .25, y = .98, size = 10) +
-   draw_label("(b)", x = .25, y = .73, size = 10) +
-   draw_label("(c)", x = .25, y = .48, size = 10) 
-grid_PVexclude
-```
-
-
-
-```{r eval=FALSE, include=FALSE}
-ggsave("../figures/2020-04-17_partialplots_outbreakONLY.tiff", plot = grid_PVexclude , width = 3, height = 7, units = c("in"), dpi=600 )
+ggsave("../figures/2021-01-11_partialplots_9models.png", plot =   grid_group_head, width = 6, height = 7, units = c("in"), dpi=600 )
 ```
 
 
@@ -588,7 +573,7 @@ ggsave("../figures/2020-04-17_partialplots_outbreakONLY.tiff", plot = grid_PVexc
 ## Poster Figure
 
 ```{r fig.height=7, fig.width=15}
-grid_all4 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi,  all_mod_plots3$ndviprefire, all_mod_plots3$fwi, all_mod_plots3$elevation,  legend4, nrow = 2) + 
+grid_all4 = cowplot::plot_grid(all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi,  all_mod_plots3$ndviprefire, all_mod_plots3$fwi, all_mod_plots3$elevation,  legendman, nrow = 2) + 
    draw_label("dead/\nsparse", x = .1, y = .62, size = 16) +
    draw_label("live/\ndense", x = .2, y = .62, size = 16) +
    draw_label("dead/\nsparse", x = .1, y = .12, size = 16) +
