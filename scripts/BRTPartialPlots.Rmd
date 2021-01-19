@@ -148,8 +148,7 @@ model_id <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = m
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
         scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
         scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        labs(y = "Fitted Function",
-             x = x_names4[[1]]) +
+        labs(x = x_names4[[1]]) +
         theme_bw(base_size = 12) +
         theme(axis.text.x = element_text(size = 10, color = "black"),
               axis.text.y = element_text(size = 10, color = "black"),
@@ -162,7 +161,8 @@ model_id <- ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = m
         #scale_x_continuous(labels = comma) +
         #ylim(-1.55, 1.55) +
         geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.75,0,0.5,1,1.5))
+        scale_y_continuous(limits=c(-2.2,2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
+
 model_id
 ```
 Leaving legend to indicate multiple models plotted.
@@ -187,7 +187,7 @@ BC_leg = ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = mode
         #scale_x_continuous(labels = comma) +
         #ylim(-1.55, 1.55) +
         geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.75,0,0.5,1,1.5))
+        scale_y_continuous(limits=c(-2.2,2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
 
 BC_leg
 ```
@@ -202,8 +202,7 @@ pardep_plot_mods4 = function(data, x_var) {
      ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
                 geom_smooth(span = 0.5, se = FALSE) + # choose span? 
                 scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted function",
-                     x = x_var) +
+                labs(x = x_var) +
                 theme_bw(base_size = 12) +
                 theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
                 theme(axis.text.x = element_text(size = 10, color = "black"),
@@ -215,7 +214,7 @@ pardep_plot_mods4 = function(data, x_var) {
                 #scale_x_continuous(labels = comma) +
                 #ylim(-1.55, 1.55) +
                 geom_hline(yintercept=0)+
-                scale_y_continuous(limits=c(-2,2), breaks=c(-2,-1,0,1,2))
+                scale_y_continuous(limits=c(-2.2,2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
 }
 
 pardep_plot_mods4(data = pred_mods4[[1]], x_var = x_names4[[1]])
@@ -298,8 +297,7 @@ model_id <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype = m
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
         scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
         scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        labs(y = "Fitted Function",
-             x = x_names3[[1]]) +
+        labs( x = x_names3[[1]]) +
         theme_bw(base_size = 14) +
         theme(axis.text.x = element_text(size = 14, color = "black"),
               axis.text.y = element_text(size = 14, color = "black"),
@@ -312,7 +310,8 @@ model_id <- ggplot(data = pred_mods3[[1]], aes(x = x, y = center_y, linetype = m
         #scale_x_continuous(labels = comma) +
         #ylim(-1.55, 1.55) +
         geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.5,0,0.5,1,1.5))
+        scale_y_continuous(limits=c(-2.2, 2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
+
 model_id
 ```
 Leaving legend to indicate multiple models plotted.
@@ -324,8 +323,7 @@ pardep_plot_mods3 = function(data, x_var) {
      ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
                 geom_smooth(span = 0.5, se = FALSE) + # choose span? 
                 scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted function",
-                     x = x_var) +
+                labs(x = x_var) +
                 theme_bw(base_size = 12) +
                 theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
                 theme(axis.text.x = element_text(size = 10, color = "black"),
@@ -337,7 +335,7 @@ pardep_plot_mods3 = function(data, x_var) {
                 #scale_x_continuous(labels = comma) +
                 #ylim(-1.55, 1.55) +
                 geom_hline(yintercept=0)+
-                scale_y_continuous(limits=c(-2.0,2.0), breaks=c(-2,-1,0,1,2))
+                scale_y_continuous(limits=c(-2.2,2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
 }
 
 pardep_plot_mods3(data = pred_mods3[[1]], x_var = x_names3[[1]])
@@ -416,8 +414,7 @@ model_id <- ggplot(data = pred_mods3o[[1]], aes(x = x, y = center_y, linetype = 
         geom_smooth(span = 0.5, se = FALSE) + # choose span? 
         scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
         scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
-        labs(y = "Fitted Function",
-             x = x_names3[[1]]) +
+        labs(x = x_names3[[1]]) +
         theme_bw(base_size = 14) +
         theme(axis.text.x = element_text(size = 14, color = "black"),
               axis.text.y = element_text(size = 14, color = "black"),
@@ -430,7 +427,7 @@ model_id <- ggplot(data = pred_mods3o[[1]], aes(x = x, y = center_y, linetype = 
         #scale_x_continuous(labels = comma) +
         #ylim(-1.55, 1.55) +
         geom_hline(yintercept=0)+
-        scale_y_continuous(limits=c(-1.5,1.5), breaks=c(-1.5,-1,-0.5,0,0.5,1,1.5))
+         scale_y_continuous(limits=c(-2.2, 2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
 model_id
 ```
 Leaving legend to indicate multiple models plotted.
@@ -442,8 +439,7 @@ pardep_plot_mods3o = function(data, x_var) {
      ggplot(data = data, aes(x = x, y = center_y, linetype = model, color = model) ) +
                 geom_smooth(span = 0.5, se = FALSE) + # choose span? 
                 scale_color_manual(values = c("blue","red", "orange")) +
-                labs(y = "Fitted function",
-                     x = x_var) +
+                labs(x = x_var) +
                 theme_bw(base_size = 12) +
                 theme(plot.margin = unit(c(0.05, 0.2, 0.05, 0.5), "cm")) +
                 theme(axis.text.x = element_text(size = 10, color = "black"),
@@ -455,7 +451,7 @@ pardep_plot_mods3o = function(data, x_var) {
                 #scale_x_continuous(labels = comma) +
                 #ylim(-1.55, 1.55) +
                 geom_hline(yintercept=0)+
-                scale_y_continuous(limits=c(-2.0,2.0), breaks=c(-2,-1,0,1,2))
+                scale_y_continuous(limits=c(-2.2, 2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
 }
 
 pardep_plot_mods3o(data = pred_mods3o[[1]], x_var = x_names3[[1]])
@@ -503,19 +499,19 @@ Order plots
 ### Group 1
 ```{r fig.height=7, fig.width=2}
 grp1 = cowplot::plot_grid( all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$ndviprefire,all_mod_plots4$dndmi, ncol = 1) +
-    draw_label("moderate", x = .47, y = .835, size = 9) +
+    draw_label("moderate", x = .49, y = .835, size = 9) +
    draw_label("extreme", x = .83, y = .835, size = 9) +
-       draw_label("low", x = .38, y = .585, size = 9) +
+       draw_label("low", x = .41, y = .585, size = 9) +
    draw_label("high", x = .84, y = .585, size = 9) +
    draw_label("dead", x = .43, y = .335, size = 9) +
    draw_label("live", x = .83, y = .335, size = 9) +
    draw_label("low", x = .53, y = .085, size = 9) +
    draw_label("high", x = .83, y = .085, size = 9) +
 
-   draw_label("(a)", x = .38, y = .98, size = 10) +
-   draw_label("(b)", x = .38, y = .73, size = 10) +
-   draw_label("(c)", x = .38, y = .48, size = 10) +
-    draw_label("(d)", x = .38, y = .23, size = 10) 
+   draw_label("(a)", x = .4, y = .98, size = 10) +
+   draw_label("(b)", x = .4, y = .73, size = 10) +
+   draw_label("(c)", x = .4, y = .48, size = 10) +
+   draw_label("(d)", x = .4, y = .23, size = 10) 
 
 grp1
 ```
@@ -523,17 +519,17 @@ grp1
 ### Group 2
 ```{r fig.height=7, fig.width=2}
 grp2 = cowplot::plot_grid(all_mod_plots3$fwi, all_mod_plots3$elevation, all_mod_plots3$ndviprefire, legendman, ncol = 1) +
-    draw_label("moderate", x = .47, y = .835, size = 9) +
+    draw_label("moderate", x = .49, y = .835, size = 9) +
    draw_label("extreme", x = .83, y = .835, size = 9) +
-       draw_label("low", x = .38, y = .585, size = 9) +
+       draw_label("low", x = .41, y = .585, size = 9) +
    draw_label("high", x = .84, y = .585, size = 9) +
    draw_label("dead", x = .43, y = .335, size = 9) +
    draw_label("live", x = .83, y = .335, size = 9) +
 
 
-   draw_label("(e)", x = .38, y = .98, size = 10) +
-   draw_label("(f)", x = .38, y = .73, size = 10) +
-   draw_label("(g)", x = .38, y = .48, size = 10) 
+   draw_label("(e)", x = .40, y = .98, size = 10) +
+   draw_label("(f)", x = .40, y = .73, size = 10) +
+   draw_label("(g)", x = .40, y = .48, size = 10) 
 grp2
 ```
 
@@ -542,17 +538,17 @@ grp2
 ### Group 3
 ```{r fig.height=7, fig.width=2}
 grp3 = cowplot::plot_grid( all_mod_plots3o$fwi, all_mod_plots3o$elevation, NULL, all_mod_plots3o$dndmi, ncol = 1) + 
-    draw_label("moderate", x = .47, y = .835, size = 9) +
+    draw_label("moderate", x = .49, y = .835, size = 9) +
    draw_label("extreme", x = .83, y = .835, size = 9) +
-       draw_label("low", x = .38, y = .585, size = 9) +
+       draw_label("low", x = .41, y = .585, size = 9) +
    draw_label("high", x = .84, y = .585, size = 9) +
    draw_label("low", x = .53, y = .085, size = 9) +
    draw_label("high", x = .83, y = .085, size = 9) +
 
 
-   draw_label("(h)", x = .38, y = .98, size = 10) +
-   draw_label("(i)", x = .38, y = .73, size = 10) +
-   draw_label("(j)", x = .38, y = .23, size = 10) 
+   draw_label("(h)", x = .40, y = .98, size = 10) +
+   draw_label("(i)", x = .40, y = .73, size = 10) +
+   draw_label("(j)", x = .40, y = .23, size = 10) 
 grp3
 ```
 
@@ -565,7 +561,7 @@ grp3
 ```
 
 ```{r eval=FALSE, include=FALSE}
-ggsave("../figures/2021-01-11_partialplots_9models.png", plot =   grid_group_head, width = 6, height = 7, units = c("in"), dpi=600 )
+ggsave("../figures/2021-01-19_partialplots_9models_probability.png", plot =   grid_group_head, width = 6, height = 7, units = c("in"), dpi=600 )
 ```
 
 
