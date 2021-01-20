@@ -36,7 +36,7 @@ library(cluster)
 
 # Data
 
-
+## Field Data
 ```{r}
 chfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_chzone10.csv", header=TRUE, sep = ",", strip.white = TRUE)
 
@@ -54,7 +54,34 @@ twfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_zone9.csv"
 
 head(twfield)
 ```
+## CBI Data
 
+```{r}
+cbi = read.csv("../data/field-sites/2018-12-10_Entiako_CBI.csv", header = TRUE, sep = ",", strip.white = TRUE)
+head(field)
+
+```
+## CBI
+```{r}
+(extrac = cbi %>%
+  dplyr::select(plot:prefiredead, Fire, UTM.E:UTM.N, CBI.under:CBI.total))
+```
+
+
+```{r eval=FALSE, include=FALSE}
+write.csv(extrac, "../output/2018-12-10_entiakoCBI_subset.csv", quote = TRUE, row.names = FALSE, sep = ",")
+```
+
+
+## CBI plus dNBR from GEE
+
+```{r}
+cbigee = read.csv("../data/gee/2018-12-11_encbi-gee.csv", header = TRUE, sep = ",", strip.white = TRUE)
+head(cbigee)
+
+```
+
+## GEE Data
 ```{r}
 chgee = read.csv("../data/gee/2019-04-04_chfieldsites10.csv", header=TRUE, sep = ",", strip.white = TRUE)
 
@@ -73,15 +100,19 @@ twgee = read.csv("../data/gee/2019-04-04_twfieldsites9.csv", header=TRUE, sep = 
 head(twgee)
 ```
 
+## Combine gee data sets
 ```{r}
 gee = rbind(chgee, engee, twgee)
 gee
 ```
 
+### Define Class Levels
+
 ```{r}
 gee$fire_sever = factor(gee$fire_sever,levels=c("High","Moderate","Low", "unburned"), ordered=TRUE)
 ```
 
+### Figure
 ```{r}
 fslegend = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
   geom_point() +
@@ -161,33 +192,7 @@ legend = cowplot::get_legend(fslegend)
 ```{r eval=FALSE, include=FALSE}
 ggsave("../figs/2019-04-08_2016_field.jpeg", plot = fscombo2, width = 6, height = 4, units = c("in"), dpi=600 )
 ```
-# Data CBI
 
-```{r}
-field = read.csv("../data/2018-12-10_Entiako_CBI.csv", header = TRUE, sep = ",", strip.white = TRUE)
-head(field)
-
-```
-
-
-```{r}
-(extrac = field %>%
-  dplyr::select(plot:prefiredead, Fire, UTM.E:UTM.N, CBI.under:CBI.total))
-```
-
-
-```{r}
-write.csv(extrac, "../output/2018-12-10_entiakoCBI_subset.csv", quote = TRUE, row.names = FALSE, sep = ",")
-```
-
-# CBI plus dNBR from GEE
-
-## Data
-```{r}
-cbigee = read.csv("../data/2018-12-11_encbi-gee.csv", header = TRUE, sep = ",", strip.white = TRUE)
-head(cbigee)
-
-```
 
 
 
