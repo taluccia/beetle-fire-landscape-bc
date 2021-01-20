@@ -1,0 +1,168 @@
+---
+title: "BRT Continuous Response"
+author: "Anna Talucci"
+date: "4/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+Model with RdNBR as a continuous response variable
+
+## Notes
+
+--Beetle vs. Fuels
+
+Boosted Regression Trees in R 
+Note: this is a cut-down version of a tutorial prepared by Jane Elith and John Leathwick
+Adapted by Chris Dunn for fire risk assessment
+Adapted by Garrett Meigs for analysis of fire refugia
+Complementary to Krawchuk et al. 2016 Ecosphere scripts
+
+## Clear workspace
+
+```{r}
+rm(list=ls()) 
+```
+
+## Set libraries
+
+```{r message=FALSE, warning=FALSE}
+library(devtools)
+library(gbm)
+library(foreign)
+library(dismo)
+library(dplyr)
+library(splines)
+library(ggplot2)
+```
+
+## Install additional BRT functions 
+These are provided in a file such as ?brt.functions.R? and can be loaded into R using the source command, e.g.:
+```{r}
+source("../function/brt.functions.R")
+```
+
+## Import data
+```{r}
+model.data = read.csv("../data/GRTS_Samples/2019-09-02_AllSamples.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+## Check dimensions, column names and order for later operations, and summary statistics
+```{r}
+head(model.data)
+```
+
+```{r}
+summary(model.data$ndviprefire)
+```
+
+```{r}
+summary(model.data$dndmi)
+```
+```{r}
+summary(model.data$rdnbr)
+```
+
+```{r}
+summary(model.data$elevation)
+```
+
+```{r}
+summary(model.data$fwi)
+```
+
+
+```{r}
+dim(model.data)
+```
+```{r}
+hist(model.data$fwi)
+```
+
+```{r}
+dim(model.data)
+```
+
+
+```{r}
+head(model.data)
+```
+
+```{r}
+names(model.data)
+```
+
+# MODEL
+ 
+Run the BRT model with RdNBR as continuous
+with explanatory variables (column number): 
+*  elevation (17), 
+*  fwi (18), 
+*  dndmibeetle (15)
+*  ndviprefire (21), 
+*  rdnbr (23)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model99 <- gbm.step(data=model.data,
+    gbm.x = c(15,17, 18, 21), 
+    gbm.y = 23,
+    family = "gaussian",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+### Get info in model output
+```{r}
+summary(brt.model99,
+        cBars=length(brt.model99$var.names),
+        n.trees=brt.model99$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model99, file = "../output/finalmodels/BRT_model_ContRdNBR_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels/BRT_model_ContRdNBR_output.rda")
+```
+
+### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model99, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+
+```{r eval=FALSE, include=FALSE}
+gbm.plot(brt.model99, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figs/finalmodels_mt/2019-05-22_BRT_model99_plots.pdf")
+dev.off()
+```
+```{r eval=FALSE, include=FALSE}
+gbm.plot.fits(brt.model99)
+dev.print(pdf, "../figs/finalmodels_mt/2019-05-22_BRT_model99_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model99)
+find.int$rank.list
+find.int$interactions
+```
+
+
+**THE END**
