@@ -123,11 +123,23 @@ model.data.lo %>%
 ```
 
 ```{r}
+model.data.lo %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+
+```{r}
 model.data.hi = subset(model.data, fwi_lohi == "2")
 ```
 
 ```{r}
 dim(model.data.hi)
+```
+
+```{r}
+model.data.hi %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
 ```
 
 ```{r}
