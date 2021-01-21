@@ -37,6 +37,7 @@ library(cluster)
 # Data
 
 ## Field Data
+### Site info
 ```{r}
 chfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_chzone10.csv", header=TRUE, sep = ",", strip.white = TRUE)
 
@@ -54,14 +55,25 @@ twfield = read.csv("../data/field-sites/2019-02-15_field_sites_beetle_zone9.csv"
 
 head(twfield)
 ```
-## CBI Data
+### Field measures
+```{r}
+field_data = read.csv("../data/field-sites/field_plot_tree_surface.csv", header=TRUE, sep = ",", strip.white = TRUE)
+
+head(field_data)
+```
+
+```{r}
+field_data = rename(field_data, plot_id=Plot_ID)
+```
+
+### CBI Data
 
 ```{r}
 cbi = read.csv("../data/field-sites/2018-12-10_Entiako_CBI.csv", header = TRUE, sep = ",", strip.white = TRUE)
 head(field)
 
 ```
-## CBI
+
 ```{r}
 (extrac = cbi %>%
   dplyr::select(plot:prefiredead, Fire, UTM.E:UTM.N, CBI.under:CBI.total))
@@ -73,7 +85,7 @@ write.csv(extrac, "../output/2018-12-10_entiakoCBI_subset.csv", quote = TRUE, ro
 ```
 
 
-## CBI plus dNBR from GEE
+## CBI plus GEE data
 
 ```{r}
 cbigee = read.csv("../data/gee/2018-12-11_encbi-gee.csv", header = TRUE, sep = ",", strip.white = TRUE)
@@ -105,7 +117,15 @@ head(twgee)
 gee = rbind(chgee, engee, twgee)
 gee
 ```
+### add field data to gee
+```{r}
 
+gee_field16 = merge(gee, field_data, by="plot_id")
+```
+
+```{r}
+head(gee_field16)
+```
 ### Define Class Levels
 
 ```{r}
@@ -125,7 +145,8 @@ fslegend = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
                          labels=c("High", "Moderate", "Low", "Unburned")) +
     ylab(label="RdNBR") + 
   xlab("NDVI") +
-  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  geom_hline(aes(yintercept=316), colour="darkorange2", linetype="dotdash", size=1)  +
+   geom_hline(aes(yintercept=640), colour="darkorange2", linetype="dotdash", size=1)  +
   theme_bw() +
    theme(legend.position = "bottom") +
     theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
@@ -159,7 +180,125 @@ fslegend
         axis.line = element_line(colour = "black")) )
 ```
 
+##### Field v RdNBR
+```{r}
+ggplot(gee_field16, aes(x=soil.sur, y=rdnbr, color=fire_sever)) +
+  geom_point() +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+    ylab(label="RdNBR") + 
+  xlab("soil") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "none") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black")) 
+```
 
+```{r}
+ggplot(gee_field16, aes(x=FIRE, y=rdnbr, color=fire_sever)) +
+  geom_point() +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+    ylab(label="RdNBR") + 
+  xlab("fire killed") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "none") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black")) 
+```
+
+```{r}
+ggplot(gee_field16, aes(x=none, y=rdnbr, color=fire_sever)) +
+  geom_point() +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+    ylab(label="RdNBR") + 
+  xlab("canopy") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "none") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black")) 
+```
+
+```{r}
+ggplot(gee_field16, aes(x=DC3, y=rdnbr, color=fire_sever)) +
+  geom_point() +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("High", "Moderate", "Low", "unburned"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+    ylab(label="RdNBR") + 
+  xlab("deep char") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "none") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black")) 
+```
+##### CBI v RdNBR
+```{r}
+ggplot(cbigee, aes(x=CBI_total, y=rdnbr)) +
+  geom_point() +
+    ylab(label="RdNBR") + 
+  xlab("CBI") +
+  geom_hline(aes(yintercept=316), colour="darkorange2", linetype="dotdash", size=1)  +
+  geom_hline(aes(yintercept=640), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "bottom") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))
+
+
+```
+##### CBI v dnbr
+```{r}
+ggplot(cbigee, aes(x=CBI_total, y=dnbr)) +
+  geom_point() +
+    ylab(label="RdNBR") + 
+  xlab("CBI") +
+  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "bottom") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))
+
+
+```
 (x = reorder(Species, Sepal.Width, FUN = median)(x=reorder(fire_sever, rdnbr, FUN = median)
 ```{r}
 gee$fire_sever
