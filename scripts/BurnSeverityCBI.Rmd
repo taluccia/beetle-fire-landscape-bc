@@ -70,7 +70,10 @@ field_data = rename(field_data, plot_id=Plot_ID)
 
 ```{r}
 cbi = read.csv("../data/field-sites/2018-12-10_Entiako_CBI.csv", header = TRUE, sep = ",", strip.white = TRUE)
-head(field)
+```
+
+```{r}
+head(cbi)
 
 ```
 
@@ -89,8 +92,19 @@ write.csv(extrac, "../output/2018-12-10_entiakoCBI_subset.csv", quote = TRUE, ro
 
 ```{r}
 cbigee = read.csv("../data/gee/2018-12-11_encbi-gee.csv", header = TRUE, sep = ",", strip.white = TRUE)
-head(cbigee)
+```
 
+```{r}
+head(cbigee)
+```
+```{r}
+unique(cbigee$CBI_total)
+```
+```{r}
+cbigee = cbigee %>% mutate(sev_cat = ifelse(CBI_total %in% 0:0.1, "unchanged",
+                                     ifelse(CBI_total %in% 0.11:1.24, "low",
+                                            ifelse(CBI_total %in% 1.25:2.24, "moderate", "high"))))
+head(cbigee)
 ```
 
 ## GEE Data
@@ -262,10 +276,14 @@ ggplot(gee_field16, aes(x=DC3, y=rdnbr, color=fire_sever)) +
 ```
 ##### CBI v RdNBR
 ```{r}
-ggplot(cbigee, aes(x=CBI_total, y=rdnbr)) +
+ggplot(cbigee, aes(x=CBI_total, y=rdnbr, color=sev_cat)) +
   geom_point() +
     ylab(label="RdNBR") + 
   xlab("CBI") +
+  
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("high", "moderate", "low", "unchanged"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
   geom_hline(aes(yintercept=316), colour="darkorange2", linetype="dotdash", size=1)  +
   geom_hline(aes(yintercept=640), colour="darkorange2", linetype="dotdash", size=1)  +
   theme_bw() +
