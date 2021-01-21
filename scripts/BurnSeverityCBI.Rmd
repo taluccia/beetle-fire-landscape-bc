@@ -300,11 +300,15 @@ ggplot(cbigee, aes(x=CBI_total, y=rdnbr, color=sev_cat)) +
 ```
 ##### CBI v dnbr
 ```{r}
-ggplot(cbigee, aes(x=CBI_total, y=dnbr)) +
+ggplot(cbigee, aes(x=CBI_total, y=dnbr, color=sev_cat)) +
   geom_point() +
     ylab(label="RdNBR") + 
   xlab("CBI") +
-  geom_hline(aes(yintercept=600), colour="darkorange2", linetype="dotdash", size=1)  +
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("high", "moderate", "low", "unchanged"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+  geom_hline(aes(yintercept=177), colour="darkorange2", linetype="dotdash", size=1)  +
+  geom_hline(aes(yintercept=367), colour="darkorange2", linetype="dotdash", size=1)  +
   theme_bw() +
    theme(legend.position = "bottom") +
     theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
