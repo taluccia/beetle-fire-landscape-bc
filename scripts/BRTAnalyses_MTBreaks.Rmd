@@ -176,7 +176,7 @@ with explanatory variables:
 set.seed(15) # Set random seed
 brt.modelF1 <- gbm.step(data=model.data.hi,
     gbm.x = c(15,17,18,21), ## 11 variables
-    gbm.y = 35,
+    gbm.y = 34,
     family = "bernoulli",
     tree.complexity = 5,
     learning.rate = 0.001,
@@ -201,7 +201,7 @@ save(brt.modelF1, file = "../output/finalmodels_mt/BRTF1_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels/BRTF1_model_data_output.rda")
+load(file = "../output/finalmodels_mt/BRTF1_model_data_output.rda")
 ```
 
 ### Relative influence of predictors as part of summary gbm - for model assessment
@@ -214,12 +214,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF1, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2019-09-02_BRT_modelF1_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_modelF1_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF1)
-dev.print(pdf, "../figs/finalmodels_mt/2019-09-02_BRT_modelF1_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_modelF1_fits_plots.pdf")
 dev.off()
 ```
 
@@ -246,9 +246,9 @@ cv.discrim.mean=round(brt.modelF1$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.modelF1.sum=data.frame(tot.n, y.perc, brt.modelF1$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.modelF1.sum, '../output/finalmodels_mt/2019-09-02_BRT_modelF1_sum.csv', row.names = F)
+write.csv(BRT.modelF1.sum, '../output/finalmodels_mt/2021-01-21_BRT_modelF1_sum.csv', row.names = F)
 BRT.modelF1.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.modelF1.relinf, '../output/finalmodels_mt/2019-09-02_BRT_modelF1_relinf.csv', row.names = F)
+write.csv(BRT.modelF1.relinf, '../output/finalmodels_mt/2021-01-21_BRT_modelF1_relinf.csv', row.names = F)
 ```
 
 ```{r}
@@ -266,7 +266,7 @@ Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18
 set.seed(15) # Set random seed
 brt.modelF2 <- gbm.step(data=model.data.lo,
     gbm.x = c(15,17,18,21), 
-    gbm.y = 35,
+    gbm.y = 34,
     family = "bernoulli",
     tree.complexity = 5,
     learning.rate = 0.001,
@@ -304,12 +304,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF2, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2019-09-02_BRT_modelF2_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_modelF2_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF2)
-dev.print(pdf, "../figs/finalmodels_mt/2019-09-02_BRT_modelF2_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_modelF2_fits_plots.pdf")
 dev.off()
 ```
 
@@ -336,9 +336,9 @@ cv.discrim.mean=round(brt.modelF2$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.modelF2.sum=data.frame(tot.n, y.perc, brt.modelF2$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.modelF2.sum, '../output/finalmodels_mt/2019-09-02_BRT_modelF2_sum.csv', row.names = F)
+write.csv(BRT.modelF2.sum, '../output/finalmodels_mt/2021-01-21_BRT_modelF2_sum.csv', row.names = F)
 BRT.modelF2.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.modelF2.relinf, '../output/finalmodels_mt/2019-09-02_BRT_modelF2_relinf.csv', row.names = F)
+write.csv(BRT.modelF2.relinf, '../output/finalmodels_mt/2021-01-21_BRT_modelF2_relinf.csv', row.names = F)
 ```
 
 ```{r}
