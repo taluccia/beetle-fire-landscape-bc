@@ -113,6 +113,10 @@ gee$fire_sever = factor(gee$fire_sever,levels=c("High","Moderate","Low", "unburn
 ```
 
 ### Figure
+
+#### Scatter Plots
+
+##### NDVI v RdNBR
 ```{r}
 fslegend = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
   geom_point() +
@@ -131,6 +135,8 @@ fslegend = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
         axis.text.y = element_text(size = 10, color = "black"),
         panel.background = element_blank(), 
         axis.line = element_line(colour = "black"))
+
+fslegend
 ```
 
 ```{r}
@@ -159,7 +165,7 @@ fslegend = ggplot(gee, aes(x=ndviprefire, y=rdnbr, color=fire_sever)) +
 gee$fire_sever
 ```
 
-
+#### Box plot of fire severity classes
 ```{r}
 (boxplot1 = ggplot(gee, aes(x=fire_sever, y=rdnbr, fill=fire_sever, order=fire_sever)) +
   geom_boxplot() +
@@ -194,6 +200,9 @@ ggsave("../figs/2019-04-08_2016_field.jpeg", plot = fscombo2, width = 6, height 
 ```
 
 
+```{r}
+head(gee)
+```
 
 
 # RdNBR Miller & Thode only
