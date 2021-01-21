@@ -100,11 +100,20 @@ head(cbigee)
 ```{r}
 unique(cbigee$CBI_total)
 ```
+
+
 ```{r}
-cbigee = cbigee %>% mutate(sev_cat = ifelse(CBI_total %in% 0:0.1, "unchanged",
-                                     ifelse(CBI_total %in% 0.11:1.24, "low",
-                                            ifelse(CBI_total %in% 1.25:2.24, "moderate", "high"))))
-head(cbigee)
+
+cbigee1 = cbigee %>% mutate("severity"= 
+                    ifelse(between(CBI_total, 0,0.10),"unchanged",
+                    ifelse(between(CBI_total,0.11,1.24),"low",
+                    ifelse(between(CBI_total,1.25,2.24),"moderate",
+                    ifelse(between(CBI_total,2.25,3.0),"high","NON"))))) %>% dplyr::select(CBI_over:Fire, severity, dnbr:rdnbr)
+
+```
+
+```{r}
+str(cbigee)
 ```
 
 ## GEE Data
@@ -276,7 +285,7 @@ ggplot(gee_field16, aes(x=DC3, y=rdnbr, color=fire_sever)) +
 ```
 ##### CBI v RdNBR
 ```{r}
-ggplot(cbigee, aes(x=CBI_total, y=rdnbr, color=sev_cat)) +
+ggplot(cbigee1, aes(x=CBI_total, y=rdnbr, color=severity)) +
   geom_point() +
     ylab(label="RdNBR") + 
   xlab("CBI") +
