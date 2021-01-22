@@ -400,12 +400,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model1.3, smooth=TRUE, write.title = TRUE, y.label="Fitted function", x.label="")
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model1.3_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model1.3_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model1.3)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model1.3_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model1.3_fits_plots.pdf")
 dev.off()
 ```
 
@@ -493,12 +493,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model2.1, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model2.1_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model2.1_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model2.1)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model2.1_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model2.1_fits_plots.pdf")
 dev.off()
 ```
 
@@ -583,12 +583,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model2.2, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model2.2_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model2.2_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model2.2)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model2.2_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model2.2_fits_plots.pdf")
 dev.off()
 ```
 
@@ -673,12 +673,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model2.3, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model2.3_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model2.3_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model2.3)
-dev.print(pdf, "../figs/finalmodels_mt/2021-01-21_BRT_model2.3_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model2.3_fits_plots.pdf")
 dev.off()
 ```
 
@@ -750,11 +750,11 @@ summary(brt.model3.1,
 #### Save model output as external object for mapping later or posterity
 
 ```{r}
-save(brt.model3.1, file = "../output/finalmodels/BRT3.1_model_data_output.rda")
+save(brt.model3.1, file = "../output/finalmodels_mt/BRT3.1_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels/BRT3.1_model_data_output.rda")
+load(file = "../output/finalmodels_mt/BRT3.1_model_data_output.rda")
 ```
 
 #### Relative influence of predictors as part of summary gbm - for model assessment
@@ -767,12 +767,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model3.1, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figures/finalmodels/2021-01-21_BRT_model3.1_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model3.1_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model3.1)
-dev.print(pdf, "../figures/finalmodels/2021-01-21_BRT_model3.1_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model3.1_fits_plots.pdf")
 dev.off()
 ```
 
@@ -799,9 +799,9 @@ cv.discrim.mean=round(brt.model3.1$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.model3.1.sum=data.frame(tot.n, y.perc, brt.model3.1$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.model3.1.sum, '../output/finalmodels/2021-01-21_BRT_model3.1_sum.csv', row.names = F)
+write.csv(BRT.model3.1.sum, '../output/finalmodels_mt/2021-01-21_BRT_model3.1_sum.csv', row.names = F)
 BRT.model3.1.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.model3.1.relinf, '../output/finalmodels/2021-01-21_BRT_model3.1_relinf.csv', row.names = F)
+write.csv(BRT.model3.1.relinf, '../output/finalmodels_mt/2021-01-21_BRT_model3.1_relinf.csv', row.names = F)
 ```
 
 ```{r}
@@ -840,11 +840,11 @@ summary(brt.model3.2,
 #### Save model output as external object for mapping later or posterity
 
 ```{r}
-save(brt.model3.2, file = "../output/finalmodels/BRT3.2_model_data_output.rda")
+save(brt.model3.2, file = "../output/finalmodels_mt/BRT3.2_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels/BRT3.2_model_data_output.rda")
+load(file = "../output/finalmodels_mt/BRT3.2_model_data_output.rda")
 ```
 
 #### Relative influence of predictors as part of summary gbm - for model assessment
@@ -857,12 +857,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model3.2, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figures/finalmodels/2021-01-21_BRT_model3.2_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model3.2_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model3.2)
-dev.print(pdf, "../figures/finalmodels/2021-01-21_BRT_model3.2_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model3.2_fits_plots.pdf")
 dev.off()
 ```
 
@@ -889,9 +889,9 @@ cv.discrim.mean=round(brt.model3.2$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.model3.2.sum=data.frame(tot.n, y.perc, brt.model3.2$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.model3.2.sum, '../output/finalmodels/2021-01-21_BRT_model3.2_sum.csv', row.names = F)
+write.csv(BRT.model3.2.sum, '../output/finalmodels_mt/2021-01-21_BRT_model3.2_sum.csv', row.names = F)
 BRT.model3.2.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.model3.2.relinf, '../output/finalmodels/2021-01-21_BRT_model3.2_relinf.csv', row.names = F)
+write.csv(BRT.model3.2.relinf, '../output/finalmodels_mt/2021-01-21_BRT_model3.2_relinf.csv', row.names = F)
 ```
 
 ```{r}
@@ -930,11 +930,11 @@ summary(brt.model3.3,
 #### Save model output as external object for mapping later or posterity
 
 ```{r}
-save(brt.model3.3, file = "../output/finalmodels/BRT3.3_model_data_output.rda")
+save(brt.model3.3, file = "../output/finalmodels_mt/BRT3.3_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels/BRT3.3_model_data_output.rda")
+load(file = "../output/finalmodels_mt/BRT3.3_model_data_output.rda")
 ```
 
 #### Relative influence of predictors as part of summary gbm - for model assessment
@@ -947,12 +947,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 #### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.model3.3, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figures/finalmodels/2021-01-21_BRT_model3.3_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model3.3_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.model3.3)
-dev.print(pdf, "../figures/finalmodels/2021-01-21_BRT_model3.3_fits_plots.pdf")
+dev.print(pdf, "../figures/finalmodels_mt/2021-01-21_BRT_model3.3_fits_plots.pdf")
 dev.off()
 ```
 
@@ -979,9 +979,9 @@ cv.discrim.mean=round(brt.model3.3$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.model3.3.sum=data.frame(tot.n, y.perc, brt.model3.3$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.model3.3.sum, '../output/finalmodels/2021-01-21_BRT_model3.3_sum.csv', row.names = F)
+write.csv(BRT.model3.3.sum, '../output/finalmodels_mt/2021-01-21_BRT_model3.3_sum.csv', row.names = F)
 BRT.model3.3.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.model3.3.relinf, '../output/finalmodels/2021-01-21_BRT_model3.3_relinf.csv', row.names = F)
+write.csv(BRT.model3.3.relinf, '../output/finalmodels_mt/2021-01-21_BRT_model3.3_relinf.csv', row.names = F)
 ```
 
 ```{r}
