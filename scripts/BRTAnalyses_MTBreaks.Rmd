@@ -154,7 +154,11 @@ model.data.hi %>%
 ```{r}
 head(model.data)
 ```
-
+```{r}
+model.data %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
 ```{r}
 names(model.data)
 ```
