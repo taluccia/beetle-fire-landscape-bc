@@ -307,6 +307,33 @@ ggplot(cbigee1, aes(x=CBI_total, y=rdnbr, color=severity)) +
 
 
 ```
+
+##### CBI v RdNBR
+```{r}
+ggplot(cbigee1, aes( x=rdnbr,y=CBI_total, color=severity)) +
+  geom_point() +
+    xlab(label="RdNBR") + 
+  ylab("CBI") +
+  
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+                         breaks=c("high", "moderate", "low", "unchanged"),
+                         labels=c("High", "Moderate", "Low", "Unburned")) +
+  geom_hline(aes(yintercept=2.25), colour="darkorange2", linetype="dotdash", size=1)  +
+  theme_bw() +
+   theme(legend.position = "bottom") +
+    theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
+    theme(axis.title.x = element_text(size = 11, hjust = 0.5, vjust = -0.1),
+        axis.title.y = element_text(size = 11, hjust = 0.5, vjust = 1.1),
+        axis.text.x = element_text(size = 10, color = "black"),
+        axis.text.y = element_text(size = 10, color = "black"),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))
+
+
+```
+```{r}
+cbigee1 %>% dplyr::select(rdnbr, CBI_over:CBI_under, severity) %>% filter(CBI_total >= 2.0)
+```
 ##### CBI v dnbr
 ```{r}
 ggplot(cbigee, aes(x=CBI_total, y=dnbr, color=sev_cat)) +
