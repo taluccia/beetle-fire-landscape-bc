@@ -1,0 +1,998 @@
+---
+title: "BRT Analysis"
+author: "Anna Talucci"
+date: "September 2, 2019"
+output: html_document
+---
+
+# Overview
+
+## Notes
+
+9-2-2019 Run wi sampling from updated gee code that should match the 5-15-2019 version.
+
+Final Models
+Full Model
+Simple Model
+
+
+--Beetle vs. Fuels
+
+Boosted Regression Trees in R 
+Note: this is a cut-down version of a tutorial prepared by Jane Elith and John Leathwick
+Adapted by Chris Dunn for fire risk assessment
+Adapted by Garrett Meigs for analysis of fire refugia
+Complementary to Krawchuk et al. 2016 Ecosphere scripts
+
+
+
+# Clear workspace
+
+```{r}
+rm(list=ls()) 
+```
+
+
+## Set libraries
+```{r include=FALSE}
+
+library(devtools)
+library(gbm)
+library(foreign)
+library(dismo)
+library(dplyr)
+library(splines)
+library(ggplot2)
+```
+
+##Install additional BRT functions 
+These are provided in a file such as ?brt.functions.R? and can be loaded into R using the source command, e.g.:
+```{r}
+source("../function/brt.functions.R")
+```
+
+# Data
+```{r}
+model.data = read.csv("../data/GRTS_Samples/2019-09-02_AllSamples.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+## Check dimensions, column names and order for later operations, and summary statistics
+```{r}
+head(model.data)
+```
+
+```{r}
+summary(model.data$nbrprefire)
+```
+```{r}
+summary(model.data$ndmiprefire)
+```
+```{r}
+summary(model.data$ndviprefire)
+```
+
+```{r}
+summary(model.data$ndmibeetle)
+```
+```{r}
+summary(model.data$ndmimeanbeetle)
+```
+
+```{r}
+summary(model.data$ndvibeetle)
+```
+
+
+
+```{r}
+dim(model.data)
+```
+```{r}
+hist(model.data$fwi)
+```
+
+
+## Create Classes for Subsetting data
+presence/absence (1/0) of moderate-to-high burn severity 
+absence less than 316 (<316) assign zero 0
+presence greater than or equal to (>=316) assign one 1
+```{r}
+model.data$fwi_lohi = ifelse(model.data$fwi <= 29, 1, 2)
+model.data$reclass_rdnbr_mt = ifelse(model.data$rdnbr < 640, 0, 1)
+model.data$reclass_rdnbr_fs = ifelse(model.data$rdnbr < 600, 0, 1)
+ 
+```
+2 is anything greater then 29 and 1 is anything less than or equal to 29
+```{r}
+head(model.data)
+```
+
+```{r}
+dim(model.data)
+```
+
+```{r}
+model.data.lo = subset(model.data, fwi_lohi == "1")
+```
+
+```{r}
+dim(model.data.lo)
+```
+```{r}
+model.data.lo %>%
+  count(reclass_rdnbr_fs) %>%
+  group_by(reclass_rdnbr_fs) 
+```
+
+```{r}
+model.data.lo %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+
+```{r}
+model.data.hi = subset(model.data, fwi_lohi == "2")
+```
+
+```{r}
+dim(model.data.hi)
+```
+
+```{r}
+model.data.hi %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+
+```{r}
+model.data.hi %>%
+  count(reclass_rdnbr_fs) %>%
+  group_by(reclass_rdnbr_fs) 
+```
+
+
+```{r}
+head(model.data)
+```
+```{r}
+model.data %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+```{r}
+names(model.data)
+```
+# Groups
+In group 1, each of the three models included four explanatory variables—prefire vegetation, fire weather, elevation, and outbreak severity. In group 2, each of the three models included three explanatory variables—prefire vegetation, fire weather, and elevation. In group 3, each of the three models included three explanatory variables—fire weather, elevation, and outbreak severity. 
+
+## Group 1
+
+four explanatory variables—prefire vegetation, fire weather, elevation, and outbreak severity
+
+### MODEL 1.1 FWI Extreme 
+Run the BRT model
+with explanatory variables: 
+*  dndmi (15)
+*  elevation(17)
+*  fwi (18)
+*  ndviprefire (21)
+*  rdnbr_class(26)
+*  reclass_rdnbr_mt (34)
+*  reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model1.1 <- gbm.step(data=model.data.hi,
+    gbm.x = c(15,17,18,21), ## 11 variables
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model1.1,
+        cBars=length(brt.model1.1$var.names),
+        n.trees=brt.model1.1$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model1.1, file = "../output/finalmodels_mtHigh/BRT1.1_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT1.1_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model1.1, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model1.1, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model1.1_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model1.1)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model1.1_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model1.1)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data.hi)
+y.perc=round(nrow(model.data.hi[model.data.hi$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model1.1$contributions)
+rel.inf=round(brt.model1.1$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model1.1$self.statistics$mean.resid/brt.model1.1$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model1.1$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model1.1$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model1.1$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model1.1$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model1.1.sum=data.frame(tot.n, y.perc, brt.model1.1$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model1.1.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model1.1_sum.csv', row.names = F)
+BRT.model1.1.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model1.1.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model1.1_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model1.1.sum
+```
+
+```{r}
+BRT.model1.1.relinf
+```
+
+### MODEL 1.2 FWI Moderate 
+Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model1.2 <- gbm.step(data=model.data.lo,
+    gbm.x = c(15,17,18,21), 
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model1.2,
+        cBars=length(brt.model1.2$var.names),
+        n.trees=brt.model1.2$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model1.2, file = "../output/finalmodels_mtHigh/BRT1.2_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT1.2_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model1.2, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model1.2, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model1.2_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model1.2)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model1.2_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model1.2)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data.lo)
+y.perc=round(nrow(model.data.lo[model.data.lo$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model1.2$contributions)
+rel.inf=round(brt.model1.2$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model1.2$self.statistics$mean.resid/brt.model1.2$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model1.2$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model1.2$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model1.2$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model1.2$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model1.2.sum=data.frame(tot.n, y.perc, brt.model1.2$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model1.2.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model1.2_sum.csv', row.names = F)
+BRT.model1.2.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model1.2.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model1.2_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model1.2.sum
+```
+
+```{r}
+BRT.model1.2.relinf
+```
+### MODEL 1.3 FWI Full
+Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+```{r}
+names(model.data)
+```
+
+```{r}
+set.seed(15) # Set random seed
+brt.model1.3 <- gbm.step(data=model.data,
+    gbm.x = c(15,17,18,21), 
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model1.3,
+        cBars=length(brt.model1.3$var.names),
+        n.trees=brt.model1.3$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model1.3, file = "../output/finalmodels_mtHigh/BRT1.3_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT1.3_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model1.3, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model1.3, smooth=TRUE, write.title = TRUE, y.label="Fitted function", x.label="")
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model1.3_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model1.3)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model1.3_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model1.3)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data)
+y.perc=round(nrow(model.data[model.data$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model1.3$contributions)
+rel.inf=round(brt.model1.3$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model1.3$self.statistics$mean.resid/brt.model1.3$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model1.3$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model1.3$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model1.3$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model1.3$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model1.3.sum=data.frame(tot.n, y.perc, brt.model1.3$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model1.3.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model1.3_sum.csv', row.names = F)
+BRT.model1.3.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model1.3.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model1.3_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model1.3.sum
+```
+
+```{r}
+BRT.model1.3.relinf
+```
+
+
+## Group 2
+### MODEL2.1 FWI Extreme 
+Run the BRT model
+with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model2.1 <- gbm.step(data=model.data.hi,
+    gbm.x = c(17,18,21), ## 11 variables
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model2.1,
+        cBars=length(brt.model2.1$var.names),
+        n.trees=brt.model2.1$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model2.1, file = "../output/finalmodels_mtHigh/BRT2.1_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT2.1_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model2.1, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model2.1, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model2.1_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model2.1)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model2.1_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model2.1)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data.hi)
+y.perc=round(nrow(model.data.hi[model.data.hi$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model2.1$contributions)
+rel.inf=round(brt.model2.1$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model2.1$self.statistics$mean.resid/brt.model2.1$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model2.1$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model2.1$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model2.1$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model2.1$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model2.1.sum=data.frame(tot.n, y.perc, brt.model2.1$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model2.1.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model2.1_sum.csv', row.names = F)
+BRT.model2.1.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model2.1.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model2.1_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model2.1.sum
+```
+
+```{r}
+BRT.model2.1.relinf
+```
+
+### MODEL 2.2 FWI Moderate 
+Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model2.2 <- gbm.step(data=model.data.lo,
+    gbm.x = c(17,18,21), 
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+### Get info in model output
+```{r}
+summary(brt.model2.2,
+        cBars=length(brt.model2.2$var.names),
+        n.trees=brt.model2.2$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model2.2, file = "../output/finalmodels_mtHigh/BRT2.2_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT2.2_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model2.2, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model2.2, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model2.2_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model2.2)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model2.2_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model2.2)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data.lo)
+y.perc=round(nrow(model.data.lo[model.data.lo$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model2.2$contributions)
+rel.inf=round(brt.model2.2$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model2.2$self.statistics$mean.resid/brt.model2.2$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model2.2$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model2.2$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model2.2$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model2.2$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model2.2.sum=data.frame(tot.n, y.perc, brt.model2.2$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model2.2.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model2.2_sum.csv', row.names = F)
+BRT.model2.2.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model2.2.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model2.2_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model2.2.sum
+```
+
+```{r}
+BRT.model2.2.relinf
+```
+
+### MODEL 2.3 FWI Full
+Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model2.3 <- gbm.step(data=model.data,
+    gbm.x = c(17,18,21), 
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model2.3,
+        cBars=length(brt.model2.3$var.names),
+        n.trees=brt.model2.3$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model2.3, file = "../output/finalmodels_mtHigh/BRT2.3_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT2.3_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model2.3, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model2.3, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model2.3_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model2.3)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model2.3_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model2.3)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data)
+y.perc=round(nrow(model.data[model.data$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model2.3$contributions)
+rel.inf=round(brt.model2.3$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model2.3$self.statistics$mean.resid/brt.model2.3$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model2.3$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model2.3$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model2.3$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model2.3$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model2.3.sum=data.frame(tot.n, y.perc, brt.model2.3$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model2.3.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model2.3_sum.csv', row.names = F)
+BRT.model2.3.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model2.3.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model2.3_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model2.3.sum
+```
+
+```{r}
+BRT.model2.3.relinf
+```
+
+
+## Group 3
+
+### MODEL 3.1 FWI Extreme
+Run the BRT model
+with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model3.1 <- gbm.step(data=model.data.hi,
+    gbm.x = c(17,18,15), ## 11 variables
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model3.1,
+        cBars=length(brt.model3.1$var.names),
+        n.trees=brt.model3.1$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model3.1, file = "../output/finalmodels_mtHigh/BRT3.1_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT3.1_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model3.1, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model3.1, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model3.1_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model3.1)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model3.1_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model3.1)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data.hi)
+y.perc=round(nrow(model.data.hi[model.data.hi$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model3.1$contributions)
+rel.inf=round(brt.model3.1$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model3.1$self.statistics$mean.resid/brt.model3.1$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model3.1$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model3.1$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model3.1$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model3.1$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model3.1.sum=data.frame(tot.n, y.perc, brt.model3.1$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model3.1.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model3.1_sum.csv', row.names = F)
+BRT.model3.1.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model3.1.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model3.1_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model3.1.sum
+```
+
+```{r}
+BRT.model3.1.relinf
+```
+
+### MODEL 3.2 FWI Moderate 
+Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model3.2 <- gbm.step(data=model.data.lo,
+    gbm.x = c(17,18,15), 
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model3.2,
+        cBars=length(brt.model3.2$var.names),
+        n.trees=brt.model3.2$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model3.2, file = "../output/finalmodels_mtHigh/BRT3.2_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT3.2_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model3.2, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model3.2, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model3.2_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model3.2)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model3.2_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model3.2)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data.lo)
+y.perc=round(nrow(model.data.lo[model.data.lo$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model3.2$contributions)
+rel.inf=round(brt.model3.2$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model3.2$self.statistics$mean.resid/brt.model3.2$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model3.2$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model3.2$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model3.2$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model3.2$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model3.2.sum=data.frame(tot.n, y.perc, brt.model3.2$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model3.2.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model3.2_sum.csv', row.names = F)
+BRT.model3.2.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model3.2.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model3.2_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model3.2.sum
+```
+
+```{r}
+BRT.model3.2.relinf
+```
+
+### MODEL 3.3 FWI FULL
+Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+
+```{r}
+set.seed(15) # Set random seed
+brt.model3.3 <- gbm.step(data=model.data,
+    gbm.x = c(17,18,15), 
+    gbm.y = 34,
+    family = "bernoulli",
+    tree.complexity = 5,
+    learning.rate = 0.001,
+    bag.fraction = 0.5)
+```
+
+#### Get info in model output
+```{r}
+summary(brt.model3.3,
+        cBars=length(brt.model3.3$var.names),
+        n.trees=brt.model3.3$n.trees,
+        plotit=TRUE,
+        order=TRUE,
+        method=relative.influence,
+        normalize=FALSE)
+```
+
+#### Save model output as external object for mapping later or posterity
+
+```{r}
+save(brt.model3.3, file = "../output/finalmodels_mtHigh/BRT3.3_model_data_output.rda")
+```
+
+```{r eval=FALSE, include=FALSE}
+load(file = "../output/finalmodels_mtHigh/BRT3.3_model_data_output.rda")
+```
+
+#### Relative influence of predictors as part of summary gbm - for model assessment
+```{r}
+relative.influence(brt.model3.3, scale=TRUE, sort=TRUE)
+```
+
+Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method randomly permutes each predictor variable at a time and computes the associated reduction in predictive performance, similar to random forests. gbm.loss(y,f,w,offset,dist,baseline, group, max.rank)
+
+#### Plotting (Anna Added)
+```{r}
+gbm.plot(brt.model3.3, smooth=TRUE, write.title = FALSE)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model3.3_plots.pdf")
+dev.off()
+```
+```{r}
+gbm.plot.fits(brt.model3.3)
+dev.print(pdf, "../figures/finalmodels_mtHigh/2021-01-28_BRT_model3.3_fits_plots.pdf")
+dev.off()
+```
+
+```{r}
+find.int = gbm.interactions(brt.model3.3)
+find.int$rank.list
+find.int$interactions
+```
+
+#### Calculate output stats 
+- Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
+Note that these calculatins are not the same as the default outputs from the BRT code.
+```{r}
+tot.n=nrow(model.data)
+y.perc=round(nrow(model.data[model.data$yvar==1,])/tot.n,2)
+vnames=row.names(brt.model3.3$contributions)
+rel.inf=round(brt.model3.3$contributions[,2],2) # variable num, from df and %contrib for each
+perc.dev.expl=round(1-(brt.model3.3$self.statistics$mean.resid/brt.model3.3$self.statistics$mean.null),2)
+roc.mean=round(mean(brt.model3.3$cv.roc.matrix),2)
+cv.dev.mean=round(brt.model3.3$cv.statistics$deviance.mean,2)
+cv.cor.mean=round(brt.model3.3$cv.statistics$correlation.mean,2)
+cv.discrim.mean=round(brt.model3.3$cv.statistics$discrimination.mean,2)
+```
+
+```{r}
+BRT.model3.3.sum=data.frame(tot.n, y.perc, brt.model3.3$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
+write.csv(BRT.model3.3.sum, '../output/finalmodels_mtHigh/2021-01-28_BRT_model3.3_sum.csv', row.names = F)
+BRT.model3.3.relinf=data.frame(rel.inf, vnames)
+write.csv(BRT.model3.3.relinf, '../output/finalmodels_mtHigh/2021-01-28_BRT_model3.3_relinf.csv', row.names = F)
+```
+
+```{r}
+BRT.model3.3.sum
+```
+
+```{r}
+BRT.model3.3.relinf
+```
+**THE END**
