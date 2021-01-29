@@ -319,6 +319,8 @@ ggplot(cbigee1, aes( x=rdnbr,y=CBI_total, color=severity)) +
                          breaks=c("high", "moderate", "low", "unchanged"),
                          labels=c("High", "Moderate", "Low", "Unburned")) +
   geom_hline(aes(yintercept=2.25), colour="darkorange2", linetype="dotdash", size=1)  +
+  
+  geom_vline(aes(xintercept=641), colour="darkorange2", linetype="dotdash", size=1)  +
   theme_bw() +
    theme(legend.position = "bottom") +
     theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
@@ -334,6 +336,16 @@ ggplot(cbigee1, aes( x=rdnbr,y=CBI_total, color=severity)) +
 ```{r}
 cbigee1 %>% dplyr::select(rdnbr, CBI_over:CBI_under, severity) %>% filter(CBI_total >= 2.0)
 ```
+
+```{r}
+y = -369.0 + 421.7*exp(2.25*0.388)
+y
+```
+
+```{r}
+cbigee1 %>% dplyr::select(severity, rdnbr, CBI_total) %>% mutate(predicted = -369.0 + 421.7*exp(CBI_total*0.388)) %>% mutate(difference = rdnbr-predicted)  %>% filter(CBI_total >= 2.0)
+```
+
 ##### CBI v dnbr
 ```{r}
 ggplot(cbigee, aes(x=CBI_total, y=dnbr, color=sev_cat)) +
