@@ -98,7 +98,7 @@ absence less than 316 (<316) assign zero 0
 presence greater than or equal to (>=316) assign one 1
 ```{r}
 model.data$fwi_lohi = ifelse(model.data$fwi <= 29, 1, 2)
-model.data$reclass_rdnbr_mt = ifelse(model.data$rdnbr < 640, 0, 1)
+model.data$reclass_rdnbr_mt = ifelse(model.data$rdnbr <= 641, 0, 1)
 model.data$reclass_rdnbr_fs = ifelse(model.data$rdnbr < 600, 0, 1)
  
 ```
