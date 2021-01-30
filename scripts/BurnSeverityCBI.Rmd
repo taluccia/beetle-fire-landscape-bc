@@ -309,18 +309,19 @@ ggplot(cbigee1, aes(x=CBI_total, y=rdnbr, color=severity)) +
 ```
 
 ##### CBI v RdNBR
-```{r}
-ggplot(cbigee1, aes( x=rdnbr,y=CBI_total, color=severity)) +
+```{r fig.height=4, fig.width=6}
+cbi_rdnbr_plot = ggplot(cbigee1, aes( x=rdnbr,y=CBI_total, color=severity)) +
   geom_point() +
     xlab(label="RdNBR") + 
   ylab("CBI") +
   
-  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="",
+  scale_color_manual(values = c("#ff5733",  "#ffc300", "#daf7a6", "#1f618d"), name="CBI severity class",
                          breaks=c("high", "moderate", "low", "unchanged"),
                          labels=c("High", "Moderate", "Low", "Unburned")) +
-  geom_hline(aes(yintercept=2.25), colour="darkorange2", linetype="dotdash", size=1)  +
-  
-  geom_vline(aes(xintercept=641), colour="darkorange2", linetype="dotdash", size=1)  +
+  geom_hline(aes(yintercept=2.25), colour="gray50", linetype="longdash", size=1)  +
+   annotate(geom="text", label=2.25, x=0, y=2.25, vjust=-.5, color="gray50") +
+  geom_vline(aes(xintercept=641), colour="gray50", linetype="solid", size=1)  +
+   annotate(geom="text", label=641, x=641, y=0.1, vjust=-.5, color="gray50", angle=90) +
   theme_bw() +
    theme(legend.position = "bottom") +
     theme(plot.margin = unit(c(t = 0.3, r = 0.1, b = 0.3, l = 0.1), "cm")) +
@@ -331,8 +332,12 @@ ggplot(cbigee1, aes( x=rdnbr,y=CBI_total, color=severity)) +
         panel.background = element_blank(), 
         axis.line = element_line(colour = "black"))
 
-
+cbi_rdnbr_plot
 ```
+```{r eval=FALSE, include=FALSE}
+ggsave("../figures/2021-01-30_CBI_RdNBR.png", plot = cbi_rdnbr_plot, width = 6, height = 4, units = c("in"), dpi=600 )
+```
+
 ```{r}
 cbigee1 %>% dplyr::select(rdnbr, CBI_over:CBI_under, severity) %>% filter(CBI_total >= 2.0)
 ```
