@@ -1,0 +1,150 @@
+---
+title: "Random Forest"
+author: "Anna Talucci"
+date: "1/28/2021"
+output: html_document
+---
+
+
+# Overview
+
+## Notes
+
+
+
+
+## Set libraries
+```{r include=FALSE}
+library(devtools)
+library(randomForest) 
+library(foreign)
+library(dplyr)
+library(ggplot2)
+```
+
+
+# Data
+```{r}
+model.data = read.csv("../data/GRTS_Samples/2019-09-02_AllSamples.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+## Check dimensions, column names and order for later operations, and summary statistics
+```{r}
+head(model.data)
+```
+
+```{r}
+summary(model.data$nbrprefire)
+```
+```{r}
+summary(model.data$ndmiprefire)
+```
+```{r}
+summary(model.data$ndviprefire)
+```
+
+```{r}
+summary(model.data$ndmibeetle)
+```
+```{r}
+summary(model.data$ndmimeanbeetle)
+```
+
+```{r}
+summary(model.data$ndvibeetle)
+```
+
+```{r}
+dim(model.data)
+```
+```{r}
+hist(model.data$fwi)
+```
+
+
+## Create Classes for Subsetting data
+presence/absence (1/0) of moderate-to-high burn severity 
+absence less than 316 (<316) assign zero 0
+presence greater than or equal to (>=316) assign one 1
+```{r}
+model.data$fwi_lohi = ifelse(model.data$fwi <= 29, 1, 2)
+model.data$reclass_rdnbr_mt = ifelse(model.data$rdnbr < 316, 0, 1)
+model.data$reclass_rdnbr_fs = ifelse(model.data$rdnbr < 600, 0, 1)
+ 
+```
+2 is anything greater then 29 and 1 is anything less than or equal to 29
+```{r}
+head(model.data)
+```
+
+```{r}
+dim(model.data)
+```
+
+```{r}
+model.data.lo = subset(model.data, fwi_lohi == "1")
+```
+
+```{r}
+dim(model.data.lo)
+```
+```{r}
+model.data.lo %>%
+  count(reclass_rdnbr_fs) %>%
+  group_by(reclass_rdnbr_fs) 
+```
+
+```{r}
+model.data.lo %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+
+```{r}
+model.data.hi = subset(model.data, fwi_lohi == "2")
+```
+
+```{r}
+dim(model.data.hi)
+```
+
+```{r}
+model.data.hi %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+
+```{r}
+model.data.hi %>%
+  count(reclass_rdnbr_fs) %>%
+  group_by(reclass_rdnbr_fs) 
+```
+
+
+```{r}
+head(model.data)
+```
+```{r}
+model.data %>%
+  count(reclass_rdnbr_mt) %>%
+  group_by(reclass_rdnbr_mt) 
+```
+```{r}
+names(model.data)
+```
+
+```{r}
+
+model.data.subset = model.data %>% dplyr::select(dndmi, elevation, fwi, ndviprefire, rdnbr)
+```
+
+# Model
+```{r}
+fire.rf <- randomForest(rdnbr ~ ., data = model.data.subset, mtry = 4, 
+                         importance = TRUE, na.action = na.omit) 
+```
+
+
+```{r}
+print(fire.rf) 
+```
