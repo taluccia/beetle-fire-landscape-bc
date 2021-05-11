@@ -192,6 +192,30 @@ BC_leg = ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = mode
 BC_leg
 ```
 
+### Figure Legend
+```{r}
+legBottom = ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +
+        geom_smooth(span = 0.5, se = FALSE) + # choose span? 
+        scale_color_manual(values = c("blue","red", "orange"), name = "Burning conditions", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=FALSE)) +
+        scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Burning conditions", labels=c("Full", "Extreme", "Moderate"), guide = guide_legend(reverse=FALSE)) +
+        labs(y = "Fitted Function",
+             x = x_names4[[1]]) +
+        theme_bw(base_size = 12) +
+        theme(axis.text.x = element_text(size = 10, color = "black"),
+              axis.text.y = element_text(size = 10, color = "black"),
+              panel.border = element_rect(color = "black", size = 1.25),
+              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
+              legend.position = "bottom",
+              legend.title = element_text(size = 14),
+              legend.text = element_text(size = 14)) +
+        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
+        #scale_x_continuous(labels = comma) +
+        #ylim(-1.55, 1.55) +
+        geom_hline(yintercept=0)+
+        scale_y_continuous(limits=c(-2.2,2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability")
+
+legBottom
+```
 ### Plotting function ----
 Note: plot.margin - t,r,b,l
 
@@ -487,6 +511,9 @@ header_groups
 legendman <- get_legend(BC_leg) 
 ```
 
+```{r}
+legend_bottom <- get_legend(legBottom) 
+```
 
 ## Manuscript Figure: Groups
 
@@ -610,4 +637,33 @@ header2
 ggsave("../figures/2019-12-03_partialplots_legendright_poster.tiff", plot = grid_final4, width = 15, height = 7, units = c("in"), dpi=600 )
 ```
 
+### Group 1 figure  ONLY
+```{r fig.height=5, fig.width=6}
+msplot1 = cowplot::plot_grid( all_mod_plots4$ndviprefire, all_mod_plots4$fwi, all_mod_plots4$elevation, all_mod_plots4$dndmi, ncol = 2) +
+    draw_label("dead/\nsparse", x = .22, y = .63, size = 9) +
+    draw_label("live/\ndense", x = .42, y = .63, size = 9) +
+    draw_label("moderate", x = .75, y = .62, size = 9) +
+   draw_label("extreme", x = .9, y = .62, size = 9) +
+      draw_label("low", x = .2, y = .12, size = 9) +
+   draw_label("high", x = .4, y = .12, size = 9) +
+   draw_label("no\nmortality", x = .7, y = .14, size = 9) +
+   draw_label("high\nmortality", x = .9, y = .14, size = 9) +
+   draw_label("(a)", x = .14, y = .97, size = 10) +
+   draw_label("(b)", x = .64, y = .97, size = 10) +
+   draw_label("(c)", x = .14, y = .47, size = 10) +
+   draw_label("(d)", x = .64, y = .47, size = 10) 
+
+msplot1
+```
+
+```{r fig.height=5.25, fig.width=6}
+grid_msplot = cowplot::plot_grid(msplot1, legend_bottom, ncol=1, rel_heights = c(1, .1))
+
+grid_msplot
+```
+
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../figures/2021-05-11_partialplots_group1Only.tiff", plot = grid_msplot, width = 6, height =5.25, units = c("in"), dpi=600 )
+```
 **THE END**
