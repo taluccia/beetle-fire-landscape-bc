@@ -1,0 +1,44 @@
+---
+title: "Select-points"
+author: "Anna Talucci"
+date: "5/14/2021"
+output: html_document
+---
+
+#Overview
+
+# Packages
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+
+
+
+```
+
+# data
+```{r}
+data = read.csv("../data/GRTS_Samples/2019-09-02_AllSamples.csv", header=TRUE, sep = ",", strip.white = TRUE)
+```
+
+```{r}
+head(data)
+```
+
+```{r}
+min(data$elevation)
+max(data$elevation)
+
+```
+
+
+```{r}
+he = data %>%
+  filter(elevation >1499)
+```
+
+```{r}
+write.csv(he, "../output/2021-05-13_highElevation.csv", row.names=FALSE)
+```
+
+
+
