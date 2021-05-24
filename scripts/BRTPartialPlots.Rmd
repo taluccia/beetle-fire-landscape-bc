@@ -80,8 +80,6 @@ brt.model9 = brt.modelF9
 ```
 
 
-
-
 # Manuscript figure
 
 ## Group 1 models 
