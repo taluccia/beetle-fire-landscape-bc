@@ -11,3 +11,8 @@ GEE code for time series:
 R scripts and other data are found in files included in this repository
 
 All forthcoming with publication.
+
+Scripts used
+
+1.
+2. BRTPartialPlots.RMD - Figures

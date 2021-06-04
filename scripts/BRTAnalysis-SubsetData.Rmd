@@ -118,7 +118,7 @@ model.data1 = model.data %>%
 model.data1
 ```
 
-## Randomly sample 2/3  of data
+## Randomly sample 60%  of data
 
 
 
@@ -128,6 +128,11 @@ train.data = model.data1 %>% sample_frac(0.6)
 train.data
 ```
 
+
+```{r}
+train.data %>%
+  count(rdnbr_class) 
+```
 ##  Subset data by classes
 
 
@@ -152,25 +157,25 @@ train.data.hi %>%
   count(rdnbr_class) 
 ```
 
-# MODEL F1 & F2
 
-
-## Model F1: Split FWI - FWI HI 
+# Model F1: Split FWI - FWI HI 
 Run the BRT model
 with explanatory variables: 
 *  dndmi (15)
 *  elevation(17)
 *  fwi (18)
 *  ndviprefire (21)
-*  rdnbr_class(26)
-*  reclass_rdnbr_mt (34)
-*  reclass_rdnbr_fs (35)
+Response varaible
+*  rdnbr_class
+```{r}
+head(train.data.hi)
+```
 
 ```{r}
 set.seed(15) # Set random seed
-brt.modelF1 <- gbm.step(data=model.data.hi,
-    gbm.x = c(15,17,18,21), ## 11 variables
-    gbm.y = 35,
+brt.modelF1 <- gbm.step(data=train.data.hi,
+    gbm.x = c(1,2,3,4), 
+    gbm.y = 7,
     family = "bernoulli",
     tree.complexity = 5,
     learning.rate = 0.001,
@@ -195,7 +200,7 @@ save(brt.modelF1, file = "../output/BRTmodels/BRTF1_model_data_output.rda")
 ```
 
 ```{r eval=FALSE, include=FALSE}
-load(file = "../output/finalmodels/BRTF1_model_data_output.rda")
+load(file = "../output/BRTmodels/BRTF1_model_data_output.rda")
 ```
 
 ### Relative influence of predictors as part of summary gbm - for model assessment
@@ -208,12 +213,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF1, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/BRTmodels/BRT_modelF1_plots.pdf")
+dev.print(pdf, "../output/BRTmodels/BRT_modelF1_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF1)
-dev.print(pdf, "../figs/BRTmodels/BRT_modelF1_fits_plots.pdf")
+dev.print(pdf, "../output/BRTmodels/BRT_modelF1_fits_plots.pdf")
 dev.off()
 ```
 
@@ -227,8 +232,8 @@ find.int$interactions
 - Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
 Note that these calculatins are not the same as the default outputs from the BRT code.
 ```{r}
-tot.n=nrow(model.data.hi)
-y.perc=round(nrow(model.data.hi[model.data.hi$yvar==1,])/tot.n,2)
+tot.n=nrow(train.data.hi)
+y.perc=round(nrow(train.data.hi[train.data.hi$yvar==1,])/tot.n,2)
 vnames=row.names(brt.modelF1$contributions)
 rel.inf=round(brt.modelF1$contributions[,2],2) # variable num, from df and %contrib for each
 perc.dev.expl=round(1-(brt.modelF1$self.statistics$mean.resid/brt.modelF1$self.statistics$mean.null),2)
@@ -253,14 +258,16 @@ BRT.modelF1.sum
 BRT.modelF1.relinf
 ```
 
-## Model F2: Split FWI - FWI Lo 
-Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
+# Model F2: Split FWI - FWI Lo 
+```{r}
+head(train.data.lo)
+```
 
 ```{r}
 set.seed(15) # Set random seed
-brt.modelF2 <- gbm.step(data=model.data.lo,
-    gbm.x = c(15,17,18,21), 
-    gbm.y = 35,
+brt.modelF2 <- gbm.step(data=train.data.lo,
+    gbm.x = c(1,2,3,4), 
+    gbm.y = 7,
     family = "bernoulli",
     tree.complexity = 5,
     learning.rate = 0.001,
@@ -298,12 +305,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF2, smooth=TRUE, write.title = FALSE)
-dev.print(pdf, "../figs/BRTmodels/BRT_modelF2_plots.pdf")
+dev.print(pdf, "../output/BRTmodels/BRT_modelF2_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF2)
-dev.print(pdf, "../figs/BRTmodels/BRT_modelF2_fits_plots.pdf")
+dev.print(pdf, "../output/BRTmodels/BRT_modelF2_fits_plots.pdf")
 dev.off()
 ```
 
@@ -317,8 +324,8 @@ find.int$interactions
 - Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
 Note that these calculatins are not the same as the default outputs from the BRT code.
 ```{r}
-tot.n=nrow(model.data.lo)
-y.perc=round(nrow(model.data.lo[model.data.lo$yvar==1,])/tot.n,2)
+tot.n=nrow(train.data.lo)
+y.perc=round(nrow(train.data.lo[train.data.lo$yvar==1,])/tot.n,2)
 vnames=row.names(brt.modelF2$contributions)
 rel.inf=round(brt.modelF2$contributions[,2],2) # variable num, from df and %contrib for each
 perc.dev.expl=round(1-(brt.modelF2$self.statistics$mean.resid/brt.modelF2$self.statistics$mean.null),2)
@@ -343,21 +350,17 @@ BRT.modelF2.sum
 BRT.modelF2.relinf
 ```
 
+# Model F6: No split for weather four variable outbreak, prefire veg, fwi, elevation
 
-
-
-
-## Model F6: No split for weather four variable outbreak, prefire veg, fwi, elevation
-Run the BRT model with explanatory variables: dndmi (15), elevation(17), fwi (18), ndviprefire (21), rdnbr_class(26), reclass_rdnbr_mt (34), reclass_rdnbr_fs (35)
 ```{r}
-names(model.data)
+head(train.data)
 ```
 
 ```{r}
 set.seed(15) # Set random seed
-brt.modelF6 <- gbm.step(data=model.data,
-    gbm.x = c(15,17,18,21), 
-    gbm.y = 35,
+brt.modelF6 <- gbm.step(data=train.data,
+    gbm.x = c(1,2,3,4), 
+    gbm.y = 7,
     family = "bernoulli",
     tree.complexity = 5,
     learning.rate = 0.001,
@@ -395,12 +398,12 @@ Notes: permutation.test.gbm(brt.model, n.trees=brt.model$n.trees); This method r
 ### Plotting (Anna Added)
 ```{r}
 gbm.plot(brt.modelF6, smooth=TRUE, write.title = TRUE, y.label="Fitted function", x.label="")
-dev.print(pdf, "../figs/BRTmodels/2019-09-05_BRT_modelF6_plots.pdf")
+dev.print(pdf, "../output/BRTmodels/BRT_modelF6_plots.pdf")
 dev.off()
 ```
 ```{r}
 gbm.plot.fits(brt.modelF6)
-dev.print(pdf, "../figs/BRTmodels/2019-09-05_BRT_modelF6_fits_plots.pdf")
+dev.print(pdf, "../output/BRTmodels/BRT_modelF6_fits_plots.pdf")
 dev.off()
 ```
 
@@ -414,8 +417,8 @@ find.int$interactions
 - Sandra Haire calculations and file export below from Krawchuk et al. (2016) Ecosphere
 Note that these calculatins are not the same as the default outputs from the BRT code.
 ```{r}
-tot.n=nrow(model.data)
-y.perc=round(nrow(model.data[model.data$yvar==1,])/tot.n,2)
+tot.n=nrow(train.data)
+y.perc=round(nrow(train.data[train.data$yvar==1,])/tot.n,2)
 vnames=row.names(brt.modelF6$contributions)
 rel.inf=round(brt.modelF6$contributions[,2],2) # variable num, from df and %contrib for each
 perc.dev.expl=round(1-(brt.modelF6$self.statistics$mean.resid/brt.modelF6$self.statistics$mean.null),2)
@@ -427,9 +430,9 @@ cv.discrim.mean=round(brt.modelF6$cv.statistics$discrimination.mean,2)
 
 ```{r}
 BRT.modelF6.sum=data.frame(tot.n, y.perc, brt.modelF6$n.trees, perc.dev.expl, roc.mean, cv.dev.mean, cv.cor.mean, cv.discrim.mean)
-write.csv(BRT.modelF6.sum, '../output/BRTmodels/2019-09-05_BRT_modelF6_sum.csv', row.names = F)
+write.csv(BRT.modelF6.sum, '../output/BRTmodels/BRT_modelF6_sum.csv', row.names = F)
 BRT.modelF6.relinf=data.frame(rel.inf, vnames)
-write.csv(BRT.modelF6.relinf, '../output/BRTmodels/2019-09-05_BRT_modelF6_relinf.csv', row.names = F)
+write.csv(BRT.modelF6.relinf, '../output/BRTmodels/BRT_modelF6_relinf.csv', row.names = F)
 ```
 
 ```{r}
@@ -439,5 +442,7 @@ BRT.modelF6.sum
 ```{r}
 BRT.modelF6.relinf
 ```
+
+
 
 
