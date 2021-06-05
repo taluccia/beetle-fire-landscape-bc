@@ -59,6 +59,15 @@ load(file = "../output/BRTmodels/BRTF6_model_data_output.rda")
 brt.model6 = brt.modelF6
 ```
 
+# Data
+
+```{r}
+data = read.csv("../data/BRT/TrainData.csv") 
+```
+
+```{r}
+head(data)
+```
 
 # Manuscript figure
 
@@ -144,6 +153,35 @@ model_id
 ```
 Leaving legend to indicate multiple models plotted.
 
+## Add bar plot?
+ggplot(model.data, aes(x=beetle_change)) + geom_histogram(color="black", fill="white") +
+```{r}
+ggplot() +
+  geom_histogram(data = data, aes(x=dndmi), fill="#003f5c", alpha=0.4)
+```
+```{r}
+ggplot() +
+  geom_histogram(data = data, aes(x=dndmi), fill="#003f5c", alpha=0.4) +
+  geom_smooth(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model), span = 0.5, se = FALSE) + # choose span? 
+        scale_color_manual(values = c("blue","red", "orange"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
+        scale_linetype_manual(values = c("solid", "longdash", "twodash"), name = "Fire weather", guide = guide_legend(reverse=TRUE)) +
+        labs(x = x_names4[[1]]) +
+        theme_bw(base_size = 12) +
+        theme(axis.text.x = element_text(size = 10, color = "black"),
+              axis.text.y = element_text(size = 10, color = "black"),
+              panel.border = element_rect(color = "black", size = 1.25),
+              panel.grid.major = element_line(color = 'white', linetype = 'dashed'), panel.grid.minor = element_blank(),
+              legend.position = "bottom",
+              legend.title = element_text(size = 14),
+              legend.text = element_text(size = 14)) +
+        scale_x_continuous(labels = scales::format_format(scientific = FALSE)) +
+        #scale_x_continuous(labels = comma) +
+        #ylim(-1.55, 1.55) +
+        scale_y_continuous(limits=c(-2.2,2.2), breaks=c(-2.197225,-0.8472979, 0, 0.8472979, 2.197225), labels = c("0.1", "0.3", "0.5", "0.7", "0.9"), name="Probability",  sec.axis = sec_axis(trans = ~.*0.0001, name="Counts"))
+
+ 
+
+```
 ### Figure Legend
 ```{r}
 BC_leg = ggplot(data = pred_mods4[[1]], aes(x = x, y = center_y, linetype = model, color = model) ) +

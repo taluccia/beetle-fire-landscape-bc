@@ -128,6 +128,10 @@ train.data = model.data1 %>% sample_frac(0.6)
 train.data
 ```
 
+```{r}
+train.data %>%
+  write.csv(., '../output/BRTmodels/TrainData.csv', row.names = FALSE)
+```
 
 ```{r}
 train.data %>%
